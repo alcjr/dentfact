@@ -1,0 +1,881 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block stylesheets %}
+<style>
+  /* Improved visual design and header truncation fix */
+  
+  /* Fix for navigation header truncation */
+  .main-header {
+    overflow: visible !important;
+    white-space: normal !important;
+  }
+
+  .logo-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .logo-header a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  .logo-header img {
+    max-width: 40px;
+    height: auto;
+  }
+
+  .navbar-brand {
+    flex-shrink: 0;
+  }
+
+  .navbar-header h2 {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Main config styles */
+  .config-editor-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    padding-top: 100px;
+  }
+
+  .config-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    color: white;
+    position: sticky;
+    top: 100px;
+    z-index: 10;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .config-editor-header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    flex: 1;
+    min-width: 250px;
+  }
+
+  .config-path {
+    font-size: 13px;
+    opacity: 0.9;
+    font-family: 'Courier New', monospace;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    word-break: break-all;
+  }
+
+  .config-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+  }
+
+  .config-actions button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+  }
+
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(40, 167, 69, 0.35);
+  }
+
+  .btn-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: white;
+  }
+
+  .btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 193, 7, 0.35);
+  }
+
+  .btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #00bcd4 100%);
+    color: white;
+  }
+
+  .btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(23, 162, 184, 0.35);
+  }
+
+  .alert {
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: none;
+    border-left: 5px solid;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .alert-success {
+    background: #d4edda;
+    color: #155724;
+    border-left-color: #28a745;
+  }
+
+  .alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+    border-left-color: #dc3545;
+  }
+
+  .alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border-left-color: #17a2b8;
+  }
+
+  .config-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .config-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .config-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #667eea;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .config-section-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #667eea;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .section-badge {
+    background: #667eea;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .config-field {
+    margin-bottom: 18px;
+  }
+
+  .config-field label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .config-field input,
+  .config-field select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+    font-family: inherit;
+  }
+
+  .config-field input::placeholder {
+    color: #adb5bd;
+  }
+
+  .config-field input:focus,
+  .config-field select:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  }
+
+  .config-field small {
+    display: block;
+    margin-top: 6px;
+    color: #6c757d;
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  .field-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .file-path-input {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background: #f5f6f7;
+    font-size: 13px;
+  }
+
+  .config-info {
+    background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%);
+    border-left: 5px solid #667eea;
+    padding: 18px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+  }
+
+  .config-info p {
+    margin: 0;
+    font-size: 14px;
+    color: #2c3e50;
+    line-height: 1.6;
+  }
+
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+
+  .loading-overlay.active {
+    display: flex;
+  }
+
+  .loading-spinner {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .changed-field {
+    border-color: #ffc107 !important;
+    background: #fffbf0 !important;
+  }
+
+  .field-error {
+    border-color: #dc3545 !important;
+    background: #ffe6e6 !important;
+  }
+
+  @media (max-width: 768px) {
+    .config-editor-container {
+      padding: 15px;
+      padding-top: 80px;
+    }
+
+    .config-editor-header {
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .config-editor-header h1 {
+      font-size: 22px;
+    }
+
+    .config-path {
+      word-break: break-all;
+      max-width: 100%;
+    }
+
+    .config-actions {
+      flex-direction: column;
+    }
+
+    .config-actions button {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .field-group {
+      grid-template-columns: 1fr;
+    }
+
+    .config-section-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="config-editor-container">
+  <div class="config-editor-header">
+    <h1>⚙️ Editor de Configuración</h1>
+    <div class="config-path">
+      <span id="configPath">config.ini</span>
+    </div>
+  </div>
+
+  <div class="config-actions">
+    <button class="btn-success" onclick="saveConfiguration()">
+      💾 Guardar Cambios
+    </button>
+    <button class="btn-warning" onclick="resetConfiguration()">
+      ↺ Restablecer
+    </button>
+    <button class="btn-info" onclick="loadConfiguration()">
+      🔄 Recargar
+    </button>
+  </div>
+
+  <div id="alertContainer"></div>
+
+  <div class="config-info">
+    <p><strong>ℹ️ Información:</strong> Los cambios en la configuración se aplicarán inmediatamente después de guardar. Asegúrese de que las rutas y valores sean correctos antes de guardar.</p>
+  </div>
+
+  <!-- Sección INPUTS -->
+  <div class="config-section">
+    <div class="config-section-header">
+      <h2>[inputs]</h2>
+      <span class="section-badge">Rutas de Entrada</span>
+    </div>
+    <div class="field-group">
+      <div class="config-field">
+        <label for="input_pdf">PDF</label>
+        <input type="text" id="input_pdf" class="file-path-input" placeholder="C:\Data\pdf">
+        <small>Ruta donde se encuentran los archivos PDF</small>
+      </div>
+      <div class="config-field">
+        <label for="input_tablas">Tablas</label>
+        <input type="text" id="input_tablas" class="file-path-input" placeholder="C:\Data\tablas">
+        <small>Ruta de archivos de tablas</small>
+      </div>
+      <div class="config-field">
+        <label for="input_master">Master</label>
+        <input type="text" id="input_master" class="file-path-input" placeholder="C:\Data\master">
+        <small>Ruta de archivos maestros</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección OUTPUTS -->
+  <div class="config-section">
+    <div class="config-section-header">
+      <h2>[outputs]</h2>
+      <span class="section-badge">Rutas de Salida</span>
+    </div>
+    <div class="field-group">
+      <div class="config-field">
+        <label for="output_logs">Logs *</label>
+        <input type="text" id="output_logs" class="file-path-input" placeholder="C:\Data\logs" required>
+        <small>Ruta donde se guardan los archivos de log (obligatorio)</small>
+      </div>
+      <div class="config-field">
+        <label for="output_merged">Merged</label>
+        <input type="text" id="output_merged" class="file-path-input" placeholder="C:\Data\merged">
+        <small>Ruta de archivos combinados</small>
+      </div>
+      <div class="config-field">
+        <label for="output_facturas">Facturas</label>
+        <input type="text" id="output_facturas" class="file-path-input" placeholder="C:\Data\facturas">
+        <small>Ruta donde se guardan las facturas generadas</small>
+      </div>
+      <div class="config-field">
+        <label for="output_sqlite3_dbpath">SQLite3 DB Path</label>
+        <input type="text" id="output_sqlite3_dbpath" class="file-path-input" placeholder="C:/data/dentfact.sqlite3">
+        <small>Ruta de la base de datos SQLite3</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección SMTP -->
+  <div class="config-section">
+    <div class="config-section-header">
+      <h2>[smtp]</h2>
+      <span class="section-badge">Configuración de Email</span>
+    </div>
+    <div class="field-group">
+      <div class="config-field">
+        <label for="smtp_email_host">Host SMTP</label>
+        <input type="text" id="smtp_email_host" placeholder="smtp.ejemplo.com">
+        <small>Servidor SMTP para envío de emails</small>
+      </div>
+      <div class="config-field">
+        <label for="smtp_email_port">Puerto</label>
+        <input type="number" id="smtp_email_port" min="1" max="65535" placeholder="465">
+        <small>Puerto del servidor SMTP (1-65535)</small>
+      </div>
+      <div class="config-field">
+        <label for="smtp_email_use_ssl">Usar SSL</label>
+        <select id="smtp_email_use_ssl">
+          <option value="True">Sí</option>
+          <option value="False">No</option>
+        </select>
+        <small>Activar conexión SSL</small>
+      </div>
+      <div class="config-field">
+        <label for="smtp_email_use_tls">Usar TLS</label>
+        <select id="smtp_email_use_tls">
+          <option value="True">Sí</option>
+          <option value="False">No</option>
+        </select>
+        <small>Activar conexión TLS</small>
+      </div>
+      <div class="config-field">
+        <label for="smtp_email_host_user">Usuario</label>
+        <input type="email" id="smtp_email_host_user" placeholder="usuario@ejemplo.com">
+        <small>Email del usuario SMTP</small>
+      </div>
+      <div class="config-field">
+        <label for="smtp_email_host_password">Contraseña</label>
+        <input type="password" id="smtp_email_host_password" placeholder="••••••••">
+        <small>Contraseña del usuario SMTP</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección DEFAULT -->
+  <div class="config-section">
+    <div class="config-section-header">
+      <h2>[default]</h2>
+      <span class="section-badge">Valores por Defecto</span>
+    </div>
+    <div class="field-group">
+      <div class="config-field">
+        <label for="default_gabinete_percentage">Porcentaje Gabinete (%)</label>
+        <input type="number" step="0.1" min="0" max="100" id="default_gabinete_percentage" placeholder="11.5">
+        <small>Porcentaje aplicado al gabinete (0-100)</small>
+      </div>
+      <div class="config-field">
+        <label for="default_iva_percentage">Porcentaje IVA (%)</label>
+        <input type="number" step="0.1" min="0" max="100" id="default_iva_percentage" placeholder="21">
+        <small>Porcentaje de IVA aplicado (0-100)</small>
+      </div>
+      <div class="config-field">
+        <label for="default_irpf_percentage">Porcentaje IRPF (%)</label>
+        <input type="number" step="0.1" min="0" max="100" id="default_irpf_percentage" placeholder="15">
+        <small>Porcentaje de IRPF aplicado (0-100)</small>
+      </div>
+      <div class="config-field">
+        <label for="default_dd_femision">Día de Emisión</label>
+        <input type="number" min="1" max="31" id="default_dd_femision" placeholder="05">
+        <small>Día del mes para emisión de facturas (1-31)</small>
+      </div>
+      <div class="config-field">
+        <label for="default_gastos">Gastos (€)</label>
+        <input type="number" step="0.01" min="0" id="default_gastos" placeholder="50.00">
+        <small>Gastos por defecto en euros</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Procesando...</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+  let originalConfig = {};
+  let currentConfig = {};
+
+  // Cargar configuración al iniciar
+  document.addEventListener('DOMContentLoaded', function() {
+    loadConfiguration();
+    setupChangeDetection();
+  });
+
+  function loadConfiguration() {
+    showLoading();
+    
+    fetch('{% url "home:config_load" %}', {
+      method: 'GET',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      hideLoading();
+      if (data.success) {
+        console.log("[v0] Config received:", data.config);
+        populateForm(data.config);
+        originalConfig = JSON.parse(JSON.stringify(data.config));
+        currentConfig = JSON.parse(JSON.stringify(data.config));
+        showAlert('✓ Configuración cargada correctamente', 'success');
+      } else {
+        showAlert(data.error || 'Error al cargar la configuración', 'danger');
+      }
+    })
+    .catch(error => {
+      hideLoading();
+      console.error('Error loading configuration:', error);
+      showAlert('Error de conexión: ' + error.message, 'danger');
+    });
+  }
+
+  function populateForm(config) {
+    
+    // Inputs section
+    if (config.inputs) {
+      setFieldValue('input_pdf', config.inputs.pdf);
+      setFieldValue('input_tablas', config.inputs.tablas);
+      setFieldValue('input_master', config.inputs.master);
+    }
+
+    // Outputs section
+    if (config.outputs) {
+      setFieldValue('output_logs', config.outputs.logs);
+      setFieldValue('output_merged', config.outputs.merged);
+      setFieldValue('output_facturas', config.outputs.facturas);
+      setFieldValue('output_sqlite3_dbpath', config.outputs.sqlite3_dbpath);
+    }
+
+    // SMTP section
+    if (config.smtp) {
+      setFieldValue('smtp_email_host', config.smtp.email_host);
+      setFieldValue('smtp_email_port', config.smtp.email_port);
+      setFieldValue('smtp_email_use_ssl', config.smtp.email_use_ssl === 'True' ? 'True' : 'False');
+      setFieldValue('smtp_email_use_tls', config.smtp.email_use_tls === 'True' ? 'True' : 'False');
+      setFieldValue('smtp_email_host_user', config.smtp.email_host_user);
+      setFieldValue('smtp_email_host_password', config.smtp.email_host_password);
+    }
+
+    // Default section - Use lowercase keys (ConfigParser converts to lowercase)
+    if (config.default) {
+      setFieldValue('default_gabinete_percentage', config.default.gabinete_percentage);
+      setFieldValue('default_iva_percentage', config.default.iva_percentage);
+      setFieldValue('default_irpf_percentage', config.default.irpf_percentage);
+      setFieldValue('default_dd_femision', config.default.dd_femision);
+      setFieldValue('default_gastos', config.default.gastos);
+    }
+  }
+
+  function setFieldValue(fieldId, value) {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.value = value || '';
+      field.classList.remove('changed-field', 'field-error');
+    }
+  }
+
+  function collectFormData() {
+    return {
+      inputs: {
+        pdf: document.getElementById('input_pdf').value.trim(),
+        tablas: document.getElementById('input_tablas').value.trim(),
+        master: document.getElementById('input_master').value.trim()
+      },
+      outputs: {
+        logs: document.getElementById('output_logs').value.trim(),
+        merged: document.getElementById('output_merged').value.trim(),
+        facturas: document.getElementById('output_facturas').value.trim(),
+        sqlite3_dbpath: document.getElementById('output_sqlite3_dbpath').value.trim()
+      },
+      smtp: {
+        email_host: document.getElementById('smtp_email_host').value.trim(),
+        email_port: document.getElementById('smtp_email_port').value.trim(),
+        email_use_ssl: document.getElementById('smtp_email_use_ssl').value,
+        email_use_tls: document.getElementById('smtp_email_use_tls').value,
+        email_host_user: document.getElementById('smtp_email_host_user').value.trim(),
+        email_host_password: document.getElementById('smtp_email_host_password').value
+      },
+      default: {
+        gabinete_percentage: document.getElementById('default_gabinete_percentage').value.trim(),
+        iva_percentage: document.getElementById('default_iva_percentage').value.trim(),
+        irpf_percentage: document.getElementById('default_irpf_percentage').value.trim(),
+        dd_femision: document.getElementById('default_dd_femision').value.trim(),
+        gastos: document.getElementById('default_gastos').value.trim()
+      }
+    };
+  }
+
+  function saveConfiguration() {
+    const configData = collectFormData();
+    
+    if (!validateConfiguration(configData)) {
+      return;
+    }
+
+    showLoading();
+    console.log("[v0] Saving config:", configData);
+
+    fetch('{% url "home:config_save" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify(configData)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      hideLoading();
+      if (data.success) {
+        originalConfig = JSON.parse(JSON.stringify(configData));
+        currentConfig = JSON.parse(JSON.stringify(configData));
+        removeAllChangedHighlights();
+        showAlert('✓ Configuración guardada correctamente', 'success');
+      } else {
+        showAlert(data.error || 'Error al guardar la configuración', 'danger');
+      }
+    })
+    .catch(error => {
+      hideLoading();
+      console.error('Error saving configuration:', error);
+      showAlert('Error de conexión: ' + error.message, 'danger');
+    });
+  }
+
+  function resetConfiguration() {
+    if (confirm('¿Está seguro de que desea restablecer todos los cambios?')) {
+      populateForm(originalConfig);
+      removeAllChangedHighlights();
+      showAlert('Configuración restablecida a los valores originales', 'info');
+    }
+  }
+
+  function validateConfiguration(config) {
+    let isValid = true;
+    const errors = [];
+
+    if (!config.outputs.logs) {
+      markFieldError('output_logs');
+      errors.push('La ruta de logs es obligatoria');
+      isValid = false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (config.smtp.email_host_user && !emailRegex.test(config.smtp.email_host_user)) {
+      markFieldError('smtp_email_host_user');
+      errors.push('El formato del email SMTP no es válido');
+      isValid = false;
+    }
+
+    const port = parseInt(config.smtp.email_port);
+    if (config.smtp.email_port && (isNaN(port) || port < 1 || port > 65535)) {
+      markFieldError('smtp_email_port');
+      errors.push('El puerto SMTP debe estar entre 1 y 65535');
+      isValid = false;
+    }
+
+    const percentageFields = [
+      { id: 'default_gabinete_percentage', value: config.default.gabinete_percentage, name: 'Gabinete' },
+      { id: 'default_iva_percentage', value: config.default.iva_percentage, name: 'IVA' },
+      { id: 'default_irpf_percentage', value: config.default.irpf_percentage, name: 'IRPF' }
+    ];
+
+    percentageFields.forEach(field => {
+      if (field.value) {
+        const percentage = parseFloat(field.value);
+        if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+          markFieldError(field.id);
+          errors.push(`El porcentaje de ${field.name} debe estar entre 0 y 100`);
+          isValid = false;
+        }
+      }
+    });
+
+    const day = parseInt(config.default.dd_femision);
+    if (config.default.dd_femision && (isNaN(day) || day < 1 || day > 31)) {
+      markFieldError('default_dd_femision');
+      errors.push('El día de emisión debe estar entre 1 y 31');
+      isValid = false;
+    }
+
+    const gastos = parseFloat(config.default.gastos);
+    if (config.default.gastos && (isNaN(gastos) || gastos < 0)) {
+      markFieldError('default_gastos');
+      errors.push('Los gastos deben ser un valor positivo');
+      isValid = false;
+    }
+
+    if (!isValid) {
+      showAlert('Errores de validación:\n• ' + errors.join('\n• '), 'danger');
+    }
+
+    return isValid;
+  }
+
+  function markFieldError(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.classList.add('field-error');
+      field.focus();
+    }
+  }
+
+  function setupChangeDetection() {
+    const inputs = document.querySelectorAll('input, select');
+    inputs.forEach(input => {
+      input.addEventListener('change', function() {
+        this.classList.remove('field-error');
+        this.classList.add('changed-field');
+      });
+      
+      input.addEventListener('input', function() {
+        this.classList.remove('field-error');
+      });
+    });
+  }
+
+  function removeAllChangedHighlights() {
+    const changedFields = document.querySelectorAll('.changed-field, .field-error');
+    changedFields.forEach(field => {
+      field.classList.remove('changed-field', 'field-error');
+    });
+  }
+
+  function showAlert(message, type) {
+    const alertContainer = document.getElementById('alertContainer');
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    
+    if (message.includes('\n')) {
+      const lines = message.split('\n');
+      const ul = document.createElement('ul');
+      ul.style.margin = '5px 0';
+      ul.style.paddingLeft = '20px';
+      lines.forEach(line => {
+        if (line.trim()) {
+          const li = document.createElement('li');
+          li.textContent = line.replace('• ', '');
+          ul.appendChild(li);
+        }
+      });
+      alertDiv.appendChild(ul);
+    } else {
+      alertDiv.textContent = message;
+    }
+    
+    alertDiv.style.display = 'block';
+    
+    alertContainer.innerHTML = '';
+    alertContainer.appendChild(alertDiv);
+
+    alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    setTimeout(() => {
+      alertDiv.style.display = 'none';
+    }, 5000);
+  }
+
+  function showLoading() {
+    document.getElementById('loadingOverlay').classList.add('active');
+  }
+
+  function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+</script>
+{% endblock %}

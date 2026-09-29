@@ -1,0 +1,10 @@
+Estimado/a {{ doctor }},
+
+Adjuntamos la factura correspondiente al período {{ periodo }}, que incluye los honorarios y gastos detallados.
+
+Si tiene alguna duda o requiere información adicional, no dude en contactarnos.
+
+Saludos cordiales,
+Equipo SERVIAPYMES
+{{ settings.EMAIL_HOST_USER }}
+

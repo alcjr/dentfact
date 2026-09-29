@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Verificación de Facturas (Veri*Factu) {% endblock %}
+
+{% block stylesheets %}
+<!-- Cargar CSS específicos de la página -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/perfect-scrollbar/1.5.5/css/perfect-scrollbar.min.css">
+<link rel="stylesheet" href="{% static 'assets/css/dentfact.css' %}">
+<link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/22.1.7/css/dx.light.css" />
+<style>
+  /* --- Cabecera fija debajo del navegador --- */
+  .Factura_Header {
+      position: sticky;
+      top: 70px; /* altura aproximada del navbar */
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 15px;
+      margin: 20px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  .Factura_Header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+  }
+
+  /* Contenedor principal conserva la estética original */
+  .content {
+      padding: 15px 20px;
+      background-color: inherit; /* mantiene el fondo del tema base */
+  }
+
+  /* Contenedor con desplazamiento interno para el grid */
+  .grid-scroll {
+      max-height: calc(100vh - 200px); /* ajusta según navbar + header + footer */
+      overflow-y: auto;
+      overflow-x: hidden;
+      background-color: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+  }
+
+  #gridContainer {
+      width: 100%;
+  }
+
+  /* Evita doble scroll sin afectar layout general */
+  html, body {
+      height: 100%;
+      overflow-y: hidden;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<!-- Barra de cabecera fija -->
+<div class="Factura_Header">
+    <h1>Verificación de Facturas (Veri*Factu)</h1>
+</div>
+
+<!-- Contenedor principal y rejilla de datos -->
+<div class="content">
+    <div class="grid-scroll">
+        <div id="gridContainer"></div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.0/dist/perfect-scrollbar.min.js"></script>
+<script src="{% static 'assets/js/atlantis.min.js' %}"></script>
+<script src="https://cdn3.devexpress.com/jslib/22.1.7/js/dx.all.js"></script>
+
+<script>
+    DevExpress.localization.locale("es");
+
+    // Función para exportar los datos seleccionados a XML compatible con Veri*Factu
+    function exportToXML(grid) {
+        // Obtener las filas seleccionadas o todas las visibles si no hay selección
+        const selectedRows = grid.getSelectedRowsData();
+        const dataToExport = selectedRows.length > 0 ? selectedRows : grid.getVisibleRows().map(row => row.data);
+
+        if (dataToExport.length === 0) {
+            alert("No hay datos para exportar.");
+            return;
+        }
+
+        // Crear el contenido XML
+        let xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        xmlString += '<Facturas>\n';
+
+        dataToExport.forEach(row => {
+            xmlString += '  <Factura>\n';
+            xmlString += `    <ID>${escapeXml(row.id)}</ID>\n`;
+            xmlString += `    <FacturaNumero>${escapeXml(row.factura_numero)}</FacturaNumero>\n`;
+            xmlString += `    <Hash>${escapeXml(row.hash)}</Hash>\n`;
+            xmlString += `    <PreviousHash>${escapeXml(row.previous_hash)}</PreviousHash>\n`;
+            xmlString += `    <SifIdentifier>${escapeXml(row.sif_id)}</SifIdentifier>\n`;
+            xmlString += '  </Factura>\n';
+        });
+
+        xmlString += '</Facturas>';
+
+        // Crear un Blob para descargar el archivo XML
+        const blob = new Blob([xmlString], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'facturas_verifactu.xml';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // Función para escapar caracteres especiales en XML
+    function escapeXml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    }
+
+    $(function() {
+        console.log("Inicializando DataGrid...");
+
+        $("#gridContainer").dxDataGrid({
+            dataSource: new DevExpress.data.CustomStore({
+                key: "id",
+                load: function() {
+                    return $.ajax({
+                        url: "/home/api/factura_v/",
+                        method: "GET",
+                        dataType: "json",
+                    }).done(function(data) {
+                        console.log("Datos cargados:", data);
+                        return { data: data, totalCount: data.length };
+                    }).fail(function(xhr, error) {
+                        console.error("Error al cargar los datos:", error);
+                        alert("Error al cargar los datos.");
+                    });
+                }
+            }),
+            columnAutoWidth: true,
+            columnResizingMode: "widget",
+            columnHidingEnabled: true,
+            rowAlternationEnabled: true,
+            showBorders: true,
+            paging: {
+                pageSize: 50
+            },
+            pager: {
+                showPageSizeSelector: true,
+                allowedPageSizes: [10, 25, 50],
+                showInfo: true
+            },
+            searchPanel: {
+                visible: true,
+                placeholder: "Buscar...",
+                width: 240
+            },
+            filterRow: { visible: true },
+            headerFilter: { visible: true },
+            selection: {
+                mode: "multiple",
+                showCheckBoxesMode: "always"
+            },
+            columns: [
+                { dataField: 'id', caption: "ID", fixed: true },
+                { dataField: 'factura', caption: "Factura", fixed: true },
+                { dataField: 'hash', caption: "Hash", fixed: true },
+                { dataField: 'previous_hash', caption: "Hash previo", fixed: true },
+                { dataField: 'sif_id', caption: "Identificador SIF", fixed: true },
+                {
+                    type: "buttons",
+                    buttons: [
+                        {
+                            hint: "Validar factura",
+                            icon: "fa fa-check",
+                            onClick: function(e) {
+                                var facturaId = e.row.data.FACTURA;
+                                var url = `https://www.agenciatributaria.es/verifactu/validate/${facturaId}`;
+                                window.open(url, '_blank');
+                            }
+                        }
+                    ],
+                    fixed: true,
+                    fixedPosition: "right"
+                }
+            ],
+            toolbar: {
+                visible: true,
+                items: [
+                    {
+                        location: "before",
+                        template: function() {
+                            return $("<div>").text("Verificación de facturas (Veri*factu)").css({
+                                "font-family": "Verdana, Geneva, Tahoma, sans-serif",
+                                "font-size": "20px",
+                                "font-weight": "bold",
+                                "color": "#192a4f",
+                                "padding": "10px"
+                            });
+                        }
+                    },
+                    "searchPanel",
+                    {
+                        location: "after",
+                        widget: "dxButton",
+                        options: {
+                            icon: "fa fa-file-code",
+                            text: "Exportar a XML",
+                            onClick: function() {
+                                var grid = $('#gridContainer').dxDataGrid('instance');
+                                exportToXML(grid);
+                            }
+                        }
+                    }
+                ]
+            },
+            onCellPrepared: function(e) {
+                if (e.rowType === "data") {
+                    $(e.cellElement).css({
+                        'text-overflow': 'ellipsis',
+                        'overflow': 'hidden',
+                        'white-space': 'nowrap'
+                    });
+                }
+            }
+        });
+    });
+</script>
+{% endblock javascripts %}

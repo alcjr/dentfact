@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Importes{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/22.1.7/css/dx.light.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/perfect-scrollbar/1.5.5/css/perfect-scrollbar.min.css">
+<link rel="stylesheet" href="{% static 'assets/css/dentfact.css' %}">
+
+<style>
+  /* --- Cabecera fija --- */
+  .Factura_Header {
+      position: sticky;
+      top: 70px;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 15px;
+      margin: 20px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  .Factura_Header h1 { margin: 0; font-size: 22px; font-weight: 600; }
+
+  .content { padding: 15px 20px; background-color: inherit; }
+
+  .grid-scroll {
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      background-color: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+  }
+
+  #gridContainer { width: 100%; }
+
+  html, body { height: 100%; overflow-y: hidden; }
+
+  /* === MODAL DE DETALLE === */
+  .dx-popup-content { overflow: hidden !important; }
+  .detail-popup .dx-popup-content { padding: 0 !important; }
+
+  #detailPopup .dx-popup-title {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      font-weight: 600 !important;
+      font-size: 18px !important;
+      line-height: 1.4 !important;
+      padding: 16px 80px 16px 20px !important;
+      border-radius: 8px 8px 0 0 !important;
+      white-space: normal !important;
+      word-wrap: break-word !important;
+      min-height: 56px !important;
+      height: auto !important;
+      max-height: 120px !important;
+      overflow: hidden !important;
+      position: relative !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      align-items: center !important;
+      z-index: 1;
+  }
+
+  #detailPopup .dx-popup-title > .dx-popup-title-content {
+      background: transparent !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100%;
+      white-space: normal !important;
+      word-wrap: break-word !important;
+      line-height: 1.4 !important;
+  }
+
+  #detailPopup .dx-popup-title .dx-button {
+      position: absolute !important;
+      right: 12px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      background: rgba(255, 255, 255, 0.15) !important;
+      border: none !important;
+      border-radius: 50% !important;
+      width: 36px !important;
+      height: 36px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 10;
+  }
+
+  #detailPopup .dx-popup-title .dx-button:hover {
+      background: rgba(255, 255, 255, 0.3) !important;
+      transform: translateY(-50%) scale(1.05);
+  }
+
+  #detailPopup .dx-popup-title .dx-button .dx-icon {
+      color: white !important;
+      font-size: 18px !important;
+      font-weight: bold;
+  }
+
+  .detail-tab-panel { height: 520px !important; overflow: hidden; }
+
+  .detail-tab-content {
+      padding: 20px;
+      background: #fdfdfd;
+      height: calc(100% - 50px);
+      overflow-y: auto;
+      border-radius: 0 0 8px 8px;
+      font-size: 14px;
+  }
+
+  .detail-row {
+      display: flex;
+      padding: 10px 0;
+      border-bottom: 1px dashed #e8e8e8;
+      align-items: flex-start;
+  }
+
+  .detail-row:last-child { border-bottom: none; }
+
+  .detail-label {
+      font-weight: 600;
+      color: #444;
+      width: 195px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 14px;
+  }
+
+  .detail-label i {
+      color: #667eea;
+      width: 18px;
+      text-align: center;
+      font-size: 15px;
+  }
+
+  .detail-value {
+      color: #222;
+      flex: 1;
+      line-height: 1.5;
+      word-break: break-word;
+      white-space: pre-wrap;
+  }
+
+  .detail-value.highlight {
+      color: #667eea !important;
+      font-weight: 700 !important;
+      font-size: 1.05em;
+  }
+
+  .detail-ellipsis {
+      cursor: pointer;
+      color: #667eea;
+      font-size: 16px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+  }
+
+  .detail-ellipsis:hover {
+      background-color: rgba(102, 126, 234, 0.1);
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="Factura_Header">
+    <h1>Importes de las facturas</h1>
+</div>
+
+<div class="content">
+    <div class="grid-scroll">
+        <div id="gridContainer"></div>
+    </div>
+</div>
+
+<!-- MODAL DE DETALLE -->
+<div id="detailPopup" class="detail-popup"></div>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.0/dist/perfect-scrollbar.min.js"></script>
+<script src="{% static 'assets/js/atlantis.min.js' %}"></script>
+<script src="https://cdn3.devexpress.com/jslib/22.1.7/js/dx.all.js"></script>
+
+<script>
+    DevExpress.localization.locale("es");
+
+    $(function() {
+        if (!$("#gridContainer").length) {
+            console.error("No se encontró #gridContainer");
+            return;
+        }
+
+        // === MODAL DE DETALLE ===
+        let detailPopup = null;
+
+        function initDetailPopup() {
+            detailPopup = $("#detailPopup").dxPopup({
+                width: 960,
+                height: 620,
+                showTitle: true,
+                title: "Detalles del Importe",
+                dragEnabled: true,
+                closeOnOutsideClick: true,
+                shading: true,
+                shadingColor: "rgba(0,0,0,0.4)",
+                toolbarItems: [],
+                onShowing: function(e) {
+                    const data = e.component.option("rowData");
+                    if (!data) return;
+
+                    e.component.option("title", `${data.DOCTOR} – ${data.N_CENTRO} (${data.L_DESDE} - ${data.L_HASTA})`);
+
+                    const content = $("<div>").addClass("detail-tab-panel");
+                    const tabPanel = $("<div>").dxTabPanel({
+                        height: "100%",
+                        items: [
+                            { title: "Datos", icon: "info", template: () => createTabDatos(data) },
+                            { title: "Importes", icon: "euro", template: () => createTabImportes(data) },
+                            { title: "Centro", icon: "building", template: () => createTabCentro(data) }
+                        ],
+                        itemTemplate: (itemData, itemIndex, element) => {
+                            element.append(`<i class="dx-icon dx-icon-${itemData.icon}"></i> <span>${itemData.title}</span>`);
+                        }
+                    });
+                    content.append(tabPanel);
+                    e.component.content().empty().append(content);
+                },
+                onShown: function() {
+                    setTimeout(() => detailPopup.repaint(), 50);
+                }
+            }).dxPopup("instance");
+
+            detailPopup._$title.find(".dx-closebutton").remove();
+            const closeBtn = $("<div>").dxButton({
+                icon: "close",
+                onClick: () => detailPopup.hide()
+            });
+            detailPopup._$title.append(closeBtn);
+        }
+
+        function createDetailRow(label, value, icon = "circle", highlight = false) {
+            if (value == null || value === "") return "";
+            const val = escapeHtml(String(value));
+            const cls = highlight ? ' class="detail-value highlight"' : ' class="detail-value"';
+            return `<div class="detail-row">
+                <div class="detail-label"><i class="fas fa-${icon}"></i> ${label}:</div>
+                <div${cls}>${val}</div>
+            </div>`;
+        }
+
+        function createTabDatos(data) {
+            const div = $("<div>").addClass("detail-tab-content");
+            let html = "";
+            html += createDetailRow("Dentista", data.DOCTOR, "user-md", true);
+            html += createDetailRow("Período", `${data.L_DESDE} - ${data.L_HASTA}`, "calendar-alt");
+            html += createDetailRow("Especialidad", data.ESPECIALIDAD, "stethoscope");
+            html += createDetailRow("Colegiado", data.COLEGIADO, "id-badge");
+            html += createDetailRow("Colaborador", data.COLABORADOR, "users");
+            div.html(html);
+            return div;
+        }
+
+        function createTabImportes(data) {
+            const div = $("<div>").addClass("detail-tab-content");
+            let html = "";
+            html += createDetailRow("Producción Privada Base", data.PP_BASE, "euro-sign", true);
+            html += createDetailRow("Producción Privada Líquido", data.PP_LIQUIDO, "check-circle");
+            html += createDetailRow("Producción Mutua Base", data.PM_BASE, "euro-sign");
+            html += createDetailRow("Producción Mutua Líquido", data.PM_LIQUIDO, "check-circle");
+            html += createDetailRow("Protésicos Base", data.P_BASE, "tools");
+            html += createDetailRow("Protésicos Líquido", data.P_LIQUIDO, "check-circle");
+            html += createDetailRow("Regularización Base", data.R_BASE, "sync");
+            html += createDetailRow("Regularización Líquido", data.R_LIQUIDO, "check-circle");
+            html += createDetailRow("Compensación Fija", data.C_FIJA, "gift");
+            html += createDetailRow("Compensación Turno", data.C_TURNO, "clock");
+            html += createDetailRow("Producción Privada Ant Base", data.PPA_BASE, "history");
+            html += createDetailRow("Producción Privada Ant Líquido", data.PPA_LIQUIDO, "check-circle");
+            html += createDetailRow("Producción Mutua Ant Base", data.PMA_BASE, "history");
+            html += createDetailRow("Producción Mutua Ant Líquido", data.PMA_LIQUIDO, "check-circle");
+            html += createDetailRow("Protésicos Anteriores Base", data.PA_BASE, "history");
+            html += createDetailRow("Protésicos Anteriores Líquido", data.PA_LIQUIDO, "check-circle");
+            html += createDetailRow("HHRR", data.HHRR, "users-cog", true);
+            html += createDetailRow("Bruto", data.BRUTO, "money-bill-wave", true);
+            html += createDetailRow("Neto", data.NETO, "hand-holding-usd", true);
+            div.html(html);
+            return div;
+        }
+
+        function createTabCentro(data) {
+            const div = $("<div>").addClass("detail-tab-content");
+            let html = "";
+            html += createDetailRow("Centro", data.N_CENTRO, "hospital", true);
+            html += createDetailRow("Código", data.CENTRO, "hashtag");
+            html += createDetailRow("SPCODE", data.SPCODE, "barcode");
+            html += createDetailRow("CIF Sociedad", data.CIF, "id-card");
+            html += createDetailRow("Liquidación", data.LIQUIDACION, "file-invoice-dollar");
+            div.html(html);
+            return div;
+        }
+
+        const euroFormat = { type: "fixedPoint", precision: 2, thousandsSeparator: ".", decimalSeparator: "," };
+
+        $("#gridContainer").dxDataGrid({
+            dataSource: new DevExpress.data.CustomStore({
+                key: "id",
+                load: function() {
+                    return $.ajax({
+                        url: "/home/api/importes/",
+                        method: "GET",
+                        dataType: "json"
+                    }).then(data => ({
+                        data: data,
+                        totalCount: data.length
+                    })).catch(error => {
+                        console.error("Error al cargar datos:", error);
+                        DevExpress.ui.notify("No se pudieron cargar los datos.", "error", 3000);
+                        return { data: [], totalCount: 0 };
+                    });
+                }
+            }),
+
+            showBorders: true,
+            rowAlternationEnabled: true,
+            columnAutoWidth: true,
+            columnResizingMode: "widget",
+            columnHidingEnabled: true,
+
+            paging: { pageSize: 50 },
+            pager: { showPageSizeSelector: true, allowedPageSizes: [10, 25, 50, 100], showInfo: true },
+
+            searchPanel: { visible: true, width: 240, placeholder: "Buscar..." },
+            filterRow: { visible: true },
+            headerFilter: { visible: true },
+
+            columns: [
+                // ÚNICA COLUMNA → IZQUIERDA → FIJA → LA BUENA
+                {
+                    type: "buttons",
+                    width: 50,
+                    fixed: true,
+                    fixedPosition: "right",
+                    cellTemplate: function(container, options) {
+                        const data = options.data;
+                        $('<div>')
+                            .addClass("detail-ellipsis")
+                            .attr("title", "Ver detalles")
+                            .html('<i class="fas fa-ellipsis-h"></i>')
+                            .appendTo(container)
+                            .on("click", function() {
+                                if (!detailPopup) initDetailPopup();
+                                detailPopup.option("rowData", data);
+                                detailPopup.show();
+                            });
+                    }
+                },
+
+                // TODAS LAS DEMÁS COLUMNAS (SIN NINGUNA OTRA CON ...)
+                { dataField: 'L_DESDE', caption: "Desde", width: 100 },
+                { dataField: 'L_HASTA', caption: "Hasta", width: 100 },
+                { dataField: 'CENTRO', caption: "Código", width: 90 },
+                { dataField: 'N_CENTRO', caption: "Centro", width: 180 },
+                { dataField: 'SPCODE', caption: "SPCODE", width: 100 },
+                { dataField: 'DOCTOR', caption: "Dentista", width: 160 },
+                { dataField: 'ESPECIALIDAD', caption: "Especialidad", width: 130 },
+                { dataField: 'COLABORADOR', caption: "Colaborador", width: 130 },
+                { dataField: 'COLEGIADO', caption: "Colegiado", width: 120 },
+                { dataField: 'CIF', caption: "CIF", width: 120 },
+                { dataField: 'LIQUIDACION', caption: "Liquidación", width: 130 },
+                { dataField: 'PP_BASE', caption: "PP Base", format: euroFormat, width: 110 },
+                { dataField: 'PP_LIQUIDO', caption: "PP Líquido", format: euroFormat, width: 110 },
+                { dataField: 'PM_BASE', caption: "PM Base", format: euroFormat, width: 110 },
+                { dataField: 'PM_LIQUIDO', caption: "PM Líquido", format: euroFormat, width: 110 },
+                { dataField: 'P_BASE', caption: "P Base", format: euroFormat, width: 110 },
+                { dataField: 'P_LIQUIDO', caption: "P Líquido", format: euroFormat, width: 110 },
+                { dataField: 'R_BASE', caption: "R Base", format: euroFormat, width: 110 },
+                { dataField: 'R_LIQUIDO', caption: "R Líquido", format: euroFormat, width: 110 },
+                { dataField: 'C_FIJA', caption: "C. Fija", format: euroFormat, width: 110 },
+                { dataField: 'C_TURNO', caption: "C. Turno", format: euroFormat, width: 110 },
+                { dataField: 'PPA_BASE', caption: "PPA Base", format: euroFormat, width: 110 },
+                { dataField: 'PPA_LIQUIDO', caption: "PPA Líquido", format: euroFormat, width: 110 },
+                { dataField: 'PMA_BASE', caption: "PMA Base", format: euroFormat, width: 110 },
+                { dataField: 'PMA_LIQUIDO', caption: "PMA Líquido", format: euroFormat, width: 110 },
+                { dataField: 'PA_BASE', caption: "PA Base", format: euroFormat, width: 110 },
+                { dataField: 'PA_LIQUIDO', caption: "PA Líquido", format: euroFormat, width: 110 },
+                { dataField: 'HHRR', caption: "HHRR", format: euroFormat, width: 110 },
+                { dataField: 'BRUTO', caption: "Bruto", format: euroFormat, width: 110 },
+                { dataField: 'NETO', caption: "Neto", format: euroFormat, width: 110 }
+            ],
+
+            toolbar: {
+                items: [
+                    "searchPanel",
+                    {
+                        location: "after",
+                        widget: "dxButton",
+                        options: {
+                            icon: "fa fa-file-excel",
+                            text: "Exportar a Excel",
+                            onClick: function() {
+                                $("#gridContainer").dxDataGrid("instance").exportToExcel();
+                            }
+                        }
+                    }
+                ]
+            },
+
+            export: { enabled: true, fileName: "Importes_Facturas" },
+
+            onCellPrepared: function(e) {
+                if (e.rowType === "data") {
+                    $(e.cellElement).css({
+                        'text-overflow': 'ellipsis',
+                        'overflow': 'hidden',
+                        'white-space': 'nowrap'
+                    });
+                }
+            }
+        });
+
+        initDetailPopup();
+    });
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{% endblock javascripts %}

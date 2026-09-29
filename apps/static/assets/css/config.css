@@ -1,0 +1,347 @@
+
+    .config-header {
+        background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .config-header h1 {
+        margin: 0;
+        font-size: 2.2rem;
+        font-weight: 300;
+    }
+    
+    .config-header p {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+    }
+    
+    .config-info-bar {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        margin: 0 0 25px 0; /* Consistente con visor.css */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .config-info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .config-info-item i {
+        color: #6f42c1;
+    }
+    
+    .config-actions {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+    
+    .config-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .config-nav-tabs {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 0;
+    }
+    
+    .config-nav-tabs .nav-link {
+        border: none;
+        border-radius: 0;
+        padding: 15px 20px;
+        color: #6c757d;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .config-nav-tabs .nav-link:hover {
+        background-color: #e9ecef;
+        color: #495057;
+    }
+    
+    .config-nav-tabs .nav-link.active {
+        background-color: white;
+        color: #6f42c1;
+        border-bottom: 3px solid #6f42c1;
+    }
+    
+    .config-nav-tabs .nav-link i {
+        margin-right: 8px;
+    }
+    
+    .tab-content {
+        padding: 0;
+    }
+    
+    .tab-pane {
+        padding: 30px;
+        min-height: 500px;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f8f9fa;
+    }
+    
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .section-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+    
+    .config-form-group {
+        margin-bottom: 25px;
+    }
+    
+    .config-form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .config-form-group .form-control {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .config-form-group .form-control:focus {
+        border-color: #6f42c1;
+        box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+    }
+    
+    .config-form-group .form-text {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-right: none;
+        color: #6c757d;
+    }
+    
+    .input-group .form-control {
+        border-left: none;
+    }
+    
+    .input-group:focus-within .input-group-text {
+        border-color: #6f42c1;
+    }
+    
+    .btn-test {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-test:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+    
+    .btn-browse {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        border: none;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-browse:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        color: white;
+    }
+    
+    .validation-feedback {
+        display: block;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+    }
+    
+    .validation-feedback.valid {
+        color: #28a745;
+    }
+    
+    .validation-feedback.invalid {
+        color: #dc3545;
+    }
+    
+    .config-section-card {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: #fafafa;
+    }
+    
+    .config-section-card h5 {
+        color: #495057;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .status-indicator.valid {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-indicator.invalid {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-indicator.testing {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .config-preview {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+    }
+    
+    .unsaved-changes {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 10px 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 1050;
+        display: none;
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    
+    .form-switch {
+        padding-left: 2.5em;
+    }
+    
+    .form-switch .form-check-input {
+        width: 2em;
+        margin-left: -2.5em;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280,0,0,.25%29'/%3e%3c/svg%3e");
+        background-position: left center;
+        background-repeat: no-repeat;
+        background-size: contain;
+        border-radius: 2em;
+    }
+    
+    .form-switch .form-check-input:checked {
+        background-color: #6f42c1;
+        border-color: #6f42c1;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%28255,255,255,1.0%29'/%3e%3c/svg%3e");
+        background-position: right center;
+    }
+    
+    .alert-custom {
+        border: none;
+        border-radius: 10px;
+        padding: 15px 20px;
+    }
+    
+    .btn-group-custom {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    @media (max-width: 768px) {
+        .config-actions .row > div {
+            margin-bottom: 10px;
+        }
+        
+        .config-nav-tabs .nav-link {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+        
+        .tab-pane {
+            padding: 20px 15px;
+        }
+    }

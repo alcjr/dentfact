@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Importes{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/22.1.7/css/dx.light.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/perfect-scrollbar/1.5.5/css/perfect-scrollbar.min.css">
+<link rel="stylesheet" href="{% static 'assets/css/dentfact.css' %}">
+<style>
+  /* --- Cabecera fija debajo del navegador --- */
+  .Factura_Header {
+      position: sticky;
+      top: 70px; /* altura aproximada del navbar */
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 15px;
+      margin: 20px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  .Factura_Header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+  }
+
+  /* Contenedor principal conserva la estética original */
+  .content {
+      padding: 15px 20px;
+      background-color: inherit; /* mantiene el fondo del tema base */
+  }
+
+  /* Contenedor con desplazamiento interno para el grid */
+  .grid-scroll {
+      max-height: calc(100vh - 200px); /* ajusta según navbar + header + footer */
+      overflow-y: auto;
+      overflow-x: hidden;
+      background-color: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+  }
+
+  #gridContainer {
+      width: 100%;
+  }
+
+  /* Evita doble scroll sin afectar layout general */
+  html, body {
+      height: 100%;
+      overflow-y: hidden;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<!-- Barra de cabecera fija -->
+<div class="Factura_Header">
+    <h1>Facturas recibidas (pdf)</h1>
+</div>
+
+<!-- Contenedor principal y rejilla de datos -->
+<div class="content">
+    <div class="grid-scroll">
+        <div id="gridContainer"></div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<!-- Cargar scripts específicos de la página -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.0/dist/perfect-scrollbar.min.js"></script>
+<script src="{% static 'assets/js/atlantis.min.js' %}"></script>
+<script src="https://cdn3.devexpress.com/jslib/22.1.7/js/dx.all.js"></script>
+<script>
+    DevExpress.localization.locale("es");
+    
+    $(function () {
+        const gridContainer = $("#gridContainer");
+
+        if (!gridContainer.length) {
+            console.error("No se encontró el contenedor #gridContainer");
+            return;
+        }
+        gridContainer.dxDataGrid({
+            dataSource: new DevExpress.data.CustomStore({
+                key: "FACTURA",
+                load: function () {
+                    return $.ajax({
+                        url: "/home/api/factura_r/",
+                        method: "GET",
+                        dataType: "json",
+                        cache: false
+                    }).fail(function (xhr, status, error) {
+                        console.error("Error al cargar los datos:", xhr.responseText || error);
+                        alert("Error al cargar los datos: " + (xhr.responseText || error));
+                    });
+                },
+                insert: function (values) {
+                    return $.ajax({
+                        url: "/api/factura_r/",
+                        method: "POST",
+                        data: JSON.stringify(values),
+                        contentType: "application/json"
+                    }).fail(function (xhr, status, error) {
+                        console.error("Error al añadir el registro:", xhr.responseText || error);
+                        alert("Error al añadir el registro: " + (xhr.responseText || error));
+                    });
+                },
+                update: function (key, values) {
+                    return $.ajax({
+                        url: `/api/factura_r/${key}/`,
+                        method: "PUT",
+                        data: JSON.stringify(values),
+                        contentType: "application/json"
+                    }).fail(function (xhr, status, error) {
+                        console.error("Error al actualizar el registro:", xhr.responseText || error);
+                        alert("Error al actualizar el registro: " + (xhr.responseText || error));
+                    });
+                },
+                remove: function (key) {
+                    return $.ajax({
+                        url: `/api/factura_r/${key}/`,
+                        method: "DELETE"
+                    }).fail(function (xhr, status, error) {
+                        console.error("Error al eliminar el registro:", xhr.responseText || error);
+                        alert("Error al eliminar el registro: " + (xhr.responseText || error));
+                    });
+                }
+            }),
+           
+            columns: [
+                { dataField: 'FACTURA', caption: "Factura", fixed: true },
+                { dataField: 'FECHA', caption: "Fecha", fixed: true },
+                { dataField: 'PERIODO', caption: "Periodo", fixed: true },
+                { dataField: 'CIF', caption: "CIF", fixed: false }, 
+                { dataField: 'DESCRIPCION_SOC', caption: "Descripción", fixed: false }, 
+                { dataField: 'DIRECCION_SOC', caption: "Dirección", fixed: false }, 
+                { dataField: 'CENTRO', caption: "Centro", fixed: true },
+                { dataField: 'CENTRO_N', caption: "Nombre", fixed: true },
+                { dataField: 'SUBTOTAL', caption: "Sub-total", fixed: true },
+                { dataField: 'TOTAL', caption: "Total", fixed: true },
+            ],
+            showBorders: true,
+            rowAlternationEnabled: true,
+            columnAutoWidth: true,
+            columnResizingMode: "widget",
+            columnHidingEnabled: true,
+            paging: {
+                pageSize: 50
+            },
+            pager: {
+                showPageSizeSelector: true,
+                allowedPageSizes: [10, 25, 50],
+                showInfo: true
+            },
+            searchPanel: {
+                visible: true,
+                width: 240,
+                placeholder: "Buscar..."
+            },
+            editing: {
+                allowUpdating: false,
+                allowDeleting: false,
+                allowAdding: false,
+                mode: "row",
+                useIcons: true
+            },
+            filterRow: { visible: true },
+            headerFilter: { visible: true },
+            scrolling: {
+                mode: "standard"
+            },
+            toolbar: {
+                visible: true,
+                items: [
+                    {
+                        location: "before",
+                        template: function() {
+                            return $("<div>").text("").css({
+                                "font-family":"Verdana, Geneva, Tahoma, sans-serif",
+                                "font-size": "20px",
+                                "font-weight": "bold",
+                                "color": " #192a4f",
+                                "padding": "10px"
+                            });
+                        }
+                    },
+                    "searchPanel",
+                    {
+                        location: "after",
+                        widget: "dxButton",
+                        options: {
+                            icon: "fa fa-sync-alt",
+                            text: "Actualizar",
+                            onClick: function() {
+                                window.location.href = "{% url 'home:upd_factura_r' %}";    
+                            }
+                        }
+                    },
+                    {
+                        location: "after",
+                        widget: "dxButton",
+                        options: {
+                            icon: "fa fa-file-excel",
+                            text: "Exportar a Excel",
+                            onClick: function() {
+                                var grid = $("#gridContainer").dxDataGrid("instance");
+                                grid.exportToExcel();
+                            }
+                        }
+                    }
+                ]
+            },
+            onCellPrepared: function(e) {
+                if (e.rowType === "data") {
+                    $(e.cellElement).css({
+                        'text-overflow': 'ellipsis',
+                        'overflow': 'hidden',
+                        'white-space': 'nowrap'
+                    });
+                }
+            }
+        });
+    });
+</script>
+{% endblock javascripts %}

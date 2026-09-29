@@ -1,0 +1,119 @@
+<!-- Sidebar -->
+<div class="sidebar sidebar-style-2" data-background-color="dark2">    
+    <div class="sidebar-wrapper scrollbar scrollbar-inner">
+        <div class="sidebar-content">
+            {% if request.user.is_authenticated %}
+                <!-- Información del usuario -->
+                <div class="user">
+                    <div class="avatar-sm float-left mr-2">
+                        <!-- Opcional: imagen/avatar del usuario -->
+                    </div>
+                    <div class="info">
+                        <a data-toggle="collapse" href="#collapseExample" aria-expanded="true" aria-controls="collapseExample">
+                            <span>
+                                {{ request.user.username|default:"Usuario" }}
+                                <span class="user-level">{{ request.user.email|default:"No registrado" }}</span>
+                                <span class="caret"></span>
+                            </span>
+                        </a>
+                        <div class="clearfix"></div>
+                        <div class="collapse in" id="collapseExample">
+                            <ul class="nav">
+                                <li>
+                                    <a href="{% url 'authentication:logout' %}">
+                                        <span class="link-collapse">Cerrar sesión</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menú completo -->
+                <ul class="nav nav-primary">
+                    <!-- Menú del panel principal -->
+                    <li class="nav-item {% if active_page == 'dashboard' %} active {% endif %}">
+                        <a data-toggle="collapse" href="#dashboard" aria-expanded="false" aria-controls="dashboard">
+                            <i class="fas fa-home"></i>
+                            <p>Panel</p>
+                            <span class="caret"></span>
+                        </a>
+                        <div class="collapse {% if active_page == 'dashboard' %} show {% endif %}" id="dashboard">
+                            <ul class="nav nav-collapse">
+                                <li>
+                                    <a href="{% url 'home:dashboard' %}">
+                                        <span class="sub-item">Cuadro de mando</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Menú de facturas -->
+                    <li class="nav-item {% if active_page == 'facturas' %} active {% endif %}">
+                        <a data-toggle="collapse" href="#facturas" aria-controls="facturas">
+                            <i class="fas fa-file-invoice"></i>
+                            <p>Facturas</p>
+                            <span class="caret"></span>
+                        </a>
+                        <div class="collapse {% if active_page == 'facturas' %} show {% endif %}" id="facturas">
+                            <ul class="nav nav-collapse">
+                                <li><a href="{% url 'home:factura_r_list' %}"><span class="sub-item">Facturas recibidas</span></a></li>                             
+                                <li><a href="{% url 'home:factura_c_list' %}"><span class="sub-item">Facturas por centros</span></a></li>
+                                <li><a href="{% url 'home:factura_d_list' %}"><span class="sub-item">Facturas por dentista</span></a></li>
+                                <li><a href="{% url 'home:factura_v_list' %}"><span class="sub-item">Verificación de facturas</span></a></li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Menú de tablas -->
+                    <li class="nav-item {% if active_page == 'tables' %} active {% endif %}">
+                        <a data-toggle="collapse" href="#tables" aria-controls="tables">
+                            <i class="fas fa-table"></i>
+                            <p>Tablas</p>
+                            <span class="caret"></span>
+                        </a>
+                        <div class="collapse {% if active_page == 'tables' %} show {% endif %}" id="tables">
+                            <ul class="nav nav-collapse">
+                                <li><a href="{% url 'home:importes_list' %}"><span class="sub-item">Importes: Centros-Dentistas</span></a></li>                             
+                                <li><a href="{% url 'home:doctor_list' %}"><span class="sub-item">Dentistas</span></a></li>
+                                <li><a href="{% url 'home:centro_list' %}"><span class="sub-item">Centros</span></a></li>
+                                <li><a href="{% url 'home:especialidad_list' %}"><span class="sub-item">Especialidades</span></a></li>
+                                <li><a href="{% url 'home:empresa_list' %}"><span class="sub-item">Sociedades</span></a></li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Menú de Configuración -->
+                    <li class="nav-item {% if active_page == 'config' %} active {% endif %}">
+                        <a data-toggle="collapse" href="#config" aria-controls="config">
+                            <i class="fas fa-cogs"></i>
+                            <p>Configuración</p>
+                            <span class="caret"></span>
+                        </a>
+                        <div class="collapse {% if active_page == 'config' %} show {% endif %}" id="config">
+                            <ul class="nav nav-collapse">
+                                <li><a href="{% url 'admin:index' %}"><span class="sub-item">Administrador</span></a></li>
+                                <li><a href="{% url 'home:view_logs' %}"><span class="sub-item">Visor de sucesos</span></a></li>
+                                <li><a href="{% url 'home:config_paths' %}"><span class="sub-item">Configuración</span></a></li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    
+                    <!-- Botón de ayuda -->
+                    <li class="mx-4 mt-2">
+                        <a target="_blank" href="https://www.serviapymes.com/" class="btn btn-danger btn-block">
+                            <span class="btn-label mr-2"><i class="fa fa-rocket"></i></span>Ayuda
+                        </a> 
+                    </li>
+                </ul>
+            {% else %}
+                <!-- Mensaje para usuarios no autenticados -->
+                <p>Por favor, inicia sesión para acceder al menú.</p>
+                <a href="{% url 'authentication:login' %}">Iniciar sesión</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<!-- End Sidebar -->

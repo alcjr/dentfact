@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Facturas por centros {% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/22.1.7/css/dx.light.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/perfect-scrollbar/1.5.5/css/perfect-scrollbar.min.css">
+<link rel="stylesheet" href="{% static 'assets/css/dentfact.css' %}">
+
+<style>
+  /* --- Cabecera fija --- */
+  .Factura_Header {
+      position: sticky;
+      top: 70px;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 15px;
+      margin: 20px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  .Factura_Header h1 { margin: 0; font-size: 22px; font-weight: 600; }
+
+  .content { padding: 15px 20px; background-color: inherit; }
+
+  .grid-scroll {
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      background-color: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+  }
+
+  #gridContainer { width: 100%; }
+
+  html, body { height: 100%; overflow-y: hidden; }
+
+  /* === MODAL DE DETALLE === */
+  .dx-popup-content { overflow: hidden !important; }
+  .detail-popup .dx-popup-content { padding: 0 !important; }
+
+  .dx-popup-title {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      font-weight: 600 !important;
+      font-size: 18px !important;
+      line-height: 1.4 !important;
+      padding: 14px 20px 14px 20px !important;
+      border-radius: 8px 8px 0 0 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+      padding-right: 60px !important;
+      box-sizing: border-box;
+  }
+
+  #detailPopup .dx-popup-title .dx-button {
+      position: absolute !important;
+      right: 12px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      background: rgba(255, 255, 255, 0.15) !important;
+      border: none !important;
+      border-radius: 50% !important;
+      width: 36px !important;
+      height: 36px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 10;
+  }
+
+  #detailPopup .dx-popup-title .dx-button:hover {
+      background: rgba(255, 255, 255, 0.3) !important;
+      transform: translateY(-50%) scale(1.05);
+  }
+
+  #detailPopup .dx-popup-title .dx-button .dx-icon {
+      color: white !important;
+      font-size: 18px !important;
+      font-weight: bold;
+  }
+
+  .detail-tab-panel { height: 520px !important; overflow: hidden; }
+  .detail-tab-content {
+      padding: 20px;
+      background: #fdfdfd;
+      height: calc(100% - 50px);
+      overflow-y: auto;
+      border-radius: 0 0 8px 8px;
+      font-size: 14px;
+  }
+
+  .detail-row {
+      display: flex;
+      padding: 10px 0;
+      border-bottom: 1px dashed #e8e8e8;
+      align-items: flex-start;
+  }
+
+  .detail-row:last-child { border-bottom: none; }
+
+  .detail-label {
+      font-weight: 600;
+      color: #444;
+      width: 195px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 14px;
+  }
+
+  .detail-label i { color: #667eea; width: 18px; text-align: center; font-size: 15px; }
+
+  .detail-value {
+      color: #222;
+      flex: 1;
+      line-height: 1.5;
+      word-break: break-word;
+      white-space: pre-wrap;
+  }
+
+  .detail-value.highlight {
+      color: #667eea !important;
+      font-weight: 700 !important;
+      font-size: 1.05em;
+  }
+
+  .action-buttons-container {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      align-items: center;
+  }
+
+  .detail-ellipsis {
+      cursor: pointer;
+      color: #667eea;
+      font-size: 16px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+  }
+
+  .detail-ellipsis:hover {
+      background-color: rgba(102, 126, 234, 0.1);
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="Factura_Header">
+    <h1>Facturas por centro</h1>
+</div>
+
+<div class="content">
+    <div class="grid-scroll">
+        <div id="gridContainer"></div>
+    </div>
+</div>
+
+<!-- MODAL DE DETALLE -->
+<div id="detailPopup" class="detail-popup"></div>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.0/dist/perfect-scrollbar.min.js"></script>
+<script src="{% static 'assets/js/atlantis.min.js' %}"></script>
+<script src="https://cdn3.devexpress.com/jslib/22.1.7/js/dx.all.js"></script>
+
+<script>
+    DevExpress.localization.locale("es");
+
+    $(function() {
+        console.log("Inicializando DataGrid para facturas por centro...");
+
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                    const csrftoken = getCookie('csrftoken');
+                    if (csrftoken) xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+        function getCookie(name) {
+            const cookies = document.cookie.split(';').map(c => c.trim());
+            for (const cookie of cookies)
+                if (cookie.startsWith(name + '=')) return decodeURIComponent(cookie.split('=')[1]);
+            return null;
+        }
+
+        let detailPopup = null;
+
+        function initDetailPopup() {
+            detailPopup = $("#detailPopup").dxPopup({
+                width: 960,
+                height: 620,
+                showTitle: true,
+                title: "Detalles de Factura",
+                dragEnabled: true,
+                closeOnOutsideClick: true,
+                shading: true,
+                shadingColor: "rgba(0,0,0,0.4)",
+                toolbarItems: [],
+                onShowing: function(e) {
+                    const data = e.component.option("rowData");
+                    if (!data) return;
+
+                    e.component.option("title", `Factura ${data.FACTURA} – ${data.N_CENTRO}`);
+
+                    const content = $("<div>").addClass("detail-tab-panel");
+                    const tabPanel = $("<div>").dxTabPanel({
+                        height: "100%",
+                        items: [
+                            { title: "Datos", icon: "info", template: () => createTabDatos(data) },
+                            { title: "Sociedad", icon: "building", template: () => createTabSociedad(data) },
+                            { title: "Liquidación", icon: "calculator", template: () => createTabLiquidacion(data) }
+                        ],
+                        itemTemplate: (itemData, itemIndex, element) => {
+                            element.append(`<i class="dx-icon dx-icon-${itemData.icon}"></i> <span>${itemData.title}</span>`);
+                        }
+                    });
+                    content.append(tabPanel);
+                    e.component.content().empty().append(content);
+                },
+                onShown: function() {
+                    setTimeout(() => detailPopup.repaint(), 50);
+                }
+            }).dxPopup("instance");
+
+            detailPopup._$title.find(".dx-closebutton").remove();
+            const closeBtn = $("<div>").dxButton({
+                icon: "close",
+                onClick: () => detailPopup.hide()
+            });
+            detailPopup._$title.append(closeBtn);
+        }
+
+        function createDetailRow(label, value, icon = "circle", highlight = false) {
+            if (value == null || value === "") return "";
+            const val = escapeHtml(String(value));
+            const cls = highlight ? ' class="detail-value highlight"' : ' class="detail-value"';
+            return `<div class="detail-row">
+                <div class="detail-label"><i class="fas fa-${icon}"></i> ${label}:</div>
+                <div${cls}>${val}</div>
+            </div>`;
+        }
+
+        function createTabDatos(data) {
+            const div = $("<div>").addClass("detail-tab-content");
+            let html = "";
+            html += createDetailRow("Factura", data.FACTURA, "hashtag");
+            html += createDetailRow("Centro", data.N_CENTRO, "hospital");
+            html += createDetailRow("Período", `${data.L_DESDE} - ${data.L_HASTA}`, "calendar-alt");
+            html += createDetailRow("Doctor", data.DOCTOR, "user-md");
+            html += createDetailRow("Especialidad", data.ESPECIALIDAD, "stethoscope");
+            html += createDetailRow("DNI", data.DNI, "id-card");
+            html += createDetailRow("Colegiado", data.COLEGIADO, "id-badge");
+            html += createDetailRow("Email", data.EMAIL, "envelope");
+            html += createDetailRow("Teléfono", data.TELEFONO, "phone");
+            html += createDetailRow("Dirección", data.DIRECCION, "map-marker-alt");
+            html += createDetailRow("Ciudad", data.CIUDAD, "city");
+            html += createDetailRow("Código Postal", data.POSTAL, "envelope");
+            html += createDetailRow("Cuenta", data.CUENTA, "university");
+            html += createDetailRow("Estado", data.ESTADO, "info-circle");
+            div.html(html);
+            return div;
+        }
+
+        function createTabSociedad(data) {
+            const div = $("<div>").addClass("detail-tab-content");
+            let html = "";
+            html += createDetailRow("Sociedad", data.SOCIEDAD, "building");
+            html += createDetailRow("CIF", data.CIF, "barcode");
+            html += createDetailRow("Descripción", data.DESCRIPCION_SOC, "file-alt");
+            html += createDetailRow("Dirección", data.DIRECCION_SOC, "map-marker-alt");
+            html += createDetailRow("Código Postal", data.POSTAL_SOC, "envelope");
+            html += createDetailRow("Provincia", data.PROVINCIA_SOC, "globe");
+            html += createDetailRow("Representante", data.REPRESENTANTE, "user-tie");
+            html += createDetailRow("NIF Rep.", data.NIF_REP, "id-card");
+            div.html(html);
+            return div;
+        }
+
+        function createTabLiquidacion(data) {
+            const div = $("<div>").addClass("detail-tab-content");
+            let html = "";
+            html += createDetailRow("Bruto", data.BRUTO, "euro-sign");
+            html += createDetailRow("Neto", data.NETO, "check-circle", true);
+            html += createDetailRow("HHRR", data.HHRR, "users");
+            html += createDetailRow("Porcentaje", data.PORCENTAJE, "percent");
+            html += createDetailRow("Gastos", data.GASTOS, "minus-circle");
+            html += createDetailRow("IRPF", data.IRPF, "percent");
+            html += createDetailRow("Cálculo", data.CALCULO, "calculator", true);
+            html += createDetailRow("Liquidación", data.LIQUIDACION, "file-invoice-dollar");
+            div.html(html);
+            return div;
+        }
+
+        const euroFormat = { type: "fixedPoint", precision: 2, thousandsSeparator: ".", decimalSeparator: "," };
+
+        $("#gridContainer").dxDataGrid({
+            dataSource: new DevExpress.data.CustomStore({
+                key: "FACTURA",
+                load: function() {
+                    return $.ajax({
+                        url: "/home/api/factura_c/",
+                        method: "GET",
+                        dataType: "json",
+                        cache: false
+                    }).then(data => ({
+                        data: data,
+                        totalCount: data.length
+                    })).catch(error => {
+                        console.error("Error al cargar datos:", error);
+                        DevExpress.ui.notify("No se pudieron cargar los datos.", "error", 3000);
+                        return { data: [], totalCount: 0 };
+                    });
+                }
+            }),
+            allowColumnReordering: true,
+            showBorders: true,
+            rowAlternationEnabled: true,
+            columnAutoWidth: false,
+            allowColumnResizing: true,
+            columnResizingMode: "widget",
+            grouping: { autoExpandAll: false, contextMenuEnabled: true, allowCollapsing: true },
+            groupPanel: { visible: true, emptyPanelText: "Arrastre aquí una columna para agrupar por ella", height: 40 },
+            paging: { pageSize: 50 },
+            pager: { showPageSizeSelector: true, allowedPageSizes: [10, 25, 50, 100], showInfo: true, showNavigationButtons: true },
+            searchPanel: { visible: true, width: 240, placeholder: "Buscar...", highlightSearchText: true },
+            filterRow: { visible: true, applyFilter: "auto" },
+            headerFilter: { visible: true },
+
+            columns: [
+                { dataField: 'FACTURA', caption: "Factura", fixed: true, width: 120 },
+                { dataField: 'N_CENTRO', caption: "Nombre Centro", fixed: true, width: 200 },
+                { dataField: 'L_DESDE', caption: "Desde", dataType: "date", format: "dd/MM/yyyy", fixed: true, width: 100 },
+                { dataField: 'L_HASTA', caption: "Hasta", dataType: "date", format: "dd/MM/yyyy", width: 100 },
+                { dataField: 'CENTRO', caption: "Centro", width: 100 },
+                { dataField: 'SPCODE', caption: "SPCODE", width: 100 },
+                { dataField: 'DOCTOR', caption: "Doctor", width: 150 },
+                { dataField: 'ESPECIALIDAD', caption: "Especialidad", width: 150 },
+                { dataField: 'BRUTO', caption: "Bruto", dataType: "number", format: euroFormat, width: 120 },
+                { dataField: 'NETO', caption: "Neto", dataType: "number", format: euroFormat, width: 120 },
+                { dataField: 'HHRR', caption: "HHRR", width: 100 },
+                { dataField: 'PORCENTAJE', caption: "Porcentaje", dataType: "number", format: { type: "percent", precision: 2 }, width: 100 },
+                { dataField: 'GASTOS', caption: "Gastos", dataType: "number", format: euroFormat, width: 120 },
+                { dataField: 'IRPF', caption: "IRPF", dataType: "number", format: euroFormat, width: 120 },
+                { dataField: 'CALCULO', caption: "Cálculo", dataType: "number", format: euroFormat, width: 120 },
+                { dataField: 'COLEGIADO', caption: "Colegiado", width: 120 },
+                { dataField: 'COLABORADOR', caption: "Colaborador", width: 120 },
+                { dataField: 'I_APELLIDO', caption: "I Apellido", width: 120 },
+                { dataField: 'II_APELLIDO', caption: "II Apellido", width: 120 },
+                { dataField: 'NOMBRE', caption: "Nombre", width: 150 },
+                { dataField: 'DNI', caption: "DNI", width: 120 },
+                { dataField: 'ESTADO', caption: "Estado", width: 100 },
+                { dataField: 'EMAIL', caption: "Email", width: 200 },
+                { dataField: 'DIRECCION', caption: "Dirección", width: 250 },
+                { dataField: 'CIUDAD', caption: "Ciudad", width: 150 },
+                { dataField: 'POSTAL', caption: "Postal", width: 100 },
+                { dataField: 'TELEFONO', caption: "Teléfono", width: 120 },
+                { dataField: 'CUENTA', caption: "Cuenta", width: 200 },
+                { dataField: 'SOCIEDAD', caption: "Sociedad", width: 150 },
+                { dataField: 'CIF', caption: "CIF", width: 120 },
+                { dataField: 'DESCRIPCION_SOC', caption: "Descripción", width: 250 },
+                { dataField: 'DIRECCION_SOC', caption: "Dirección Soc.", width: 250 },
+                { dataField: 'POSTAL_SOC', caption: "Postal Soc.", width: 100 },
+                { dataField: 'PROVINCIA_SOC', caption: "Provincia Soc.", width: 150 },
+                { dataField: 'REPRESENTANTE', caption: "Representante", width: 150 },
+                { dataField: 'NIF_REP', caption: "NIF Rep.", width: 120 },
+                { dataField: 'LIQUIDACION', caption: "Liquidación", width: 120 },
+
+                // === SOLO ELIPSIS (sin botón ojo) ===
+                {
+                    type: "buttons",
+                    width: 60,
+                    fixed: true,
+                    fixedPosition: "right",
+                    cellTemplate: function(container, options) {
+                        const data = options.data;
+                        const wrapper = $('<div>').addClass('action-buttons-container');
+
+                        // SOLO ELIPSIS
+                        $('<div>')
+                            .addClass("detail-ellipsis")
+                            .attr("title", "Ver detalles")
+                            .html('<i class="fas fa-ellipsis-h"></i>')
+                            .appendTo(wrapper)
+                            .on("click", function() {
+                                if (!detailPopup) initDetailPopup();
+                                detailPopup.option("rowData", data);
+                                detailPopup.show();
+                            });
+
+                        container.append(wrapper);
+                    }
+                }
+            ],
+
+            summary: {
+                groupItems: [
+                    { column: "BRUTO", summaryType: "sum", valueFormat: euroFormat, displayFormat: "Total: {0} €" },
+                    { column: "NETO", summaryType: "sum", valueFormat: euroFormat, displayFormat: "Total: {0} €" },
+                    { column: "CALCULO", summaryType: "sum", valueFormat: euroFormat, displayFormat: "Total: {0} €" }
+                ],
+                totalItems: [
+                    { column: "BRUTO", summaryType: "sum", valueFormat: euroFormat, displayFormat: "Total General: {0} €" },
+                    { column: "NETO", summaryType: "sum", valueFormat: euroFormat, displayFormat: "Total General: {0} €" },
+                    { column: "CALCULO", summaryType: "sum", valueFormat: euroFormat, displayFormat: "Total General: {0} €" }
+                ]
+            },
+
+            toolbar: {
+                items: [
+                    "groupPanel", "searchPanel",
+                    { location: "after", widget: "dxButton", options: { icon: "fa fa-sync-alt", text: "Actualizar", onClick: () => window.location.href = "{% url 'home:upd_factura_c' %}" } },
+                    { location: "after", widget: "dxButton", options: { icon: "fa fa-file-excel", text: "Exportar a Excel", onClick: () => $("#gridContainer").dxDataGrid("instance").exportToExcel() } },
+                    { location: "after", widget: "dxButton", options: { icon: "group", text: "Expandir Grupos", onClick: () => $("#gridContainer").dxDataGrid("instance").expandAll(-1) } },
+                    { location: "after", widget: "dxButton", options: { icon: "ungroup", text: "Colapsar Grupos", onClick: () => $("#gridContainer").dxDataGrid("instance").collapseAll(-1) } },
+                    "columnChooserButton"
+                ]
+            },
+
+            export: { enabled: true, fileName: "Facturas_por_centros" },
+
+            onCellPrepared: function(e) {
+                if (e.rowType === "data") {
+                    $(e.cellElement).css({ 'text-overflow': 'ellipsis', 'overflow': 'hidden', 'white-space': 'nowrap' });
+                }
+            }
+        });
+
+        initDetailPopup();
+    });
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{% endblock javascripts %}

@@ -1,0 +1,748 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block stylesheets %}
+<style>
+    /* ============================================================
+       Estructura real de base.html:
+         .wrapper > .main-panel > .content-wrapper > (Header + zona scroll)
+                  > footer
+       La navbar y el sidebar son posicionados por Atlantis.
+       Nuestro header debe quedar DEBAJO de la navbar, con aire.
+       ============================================================ */
+    html, body { height: 100%; overflow: hidden; }
+
+    .wrapper .main-panel {
+        display: flex !important;
+        flex-direction: column;
+        height: 100vh !important;
+        max-height: 100vh;
+        overflow: hidden !important;
+    }
+
+    /* El content-wrapper conserva el padding lateral de Atlantis,
+       pero forzamos padding-top amplio para dejar sitio a la navbar.
+       Ajustar 80px = altura_navbar (~62px) + aire (~18px) si cambia. */
+    .main-panel > .content-wrapper {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 80px 30px 0 !important;
+        box-sizing: border-box;
+    }
+
+    .main-panel > *:not(.content-wrapper) {
+        flex: 0 0 auto;
+        position: static !important;
+    }
+
+    /* Header con altura fija garantizada, sin depender del padre */
+    .content-wrapper > .dashboard-header {
+        flex: 0 0 64px !important;
+        height: 64px !important;
+        min-height: 64px !important;
+        max-height: 64px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 0 20px !important;
+        margin: 0 0 20px 0 !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border-radius: 8px !important;
+        color: #fff !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        position: relative;
+        z-index: 1;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+
+    .content-wrapper > .dashboard-header h1 {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 22px !important;
+        line-height: 1 !important;
+        font-weight: 600 !important;
+        color: #fff !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* Área con scroll: único scroll vertical de la página */
+    #dashboard-scroll {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        padding-bottom: 20px;
+        margin-top: 0 !important;
+    }
+
+    /* Cards: crecen con su contenido */
+    .dash-card {
+        height: auto;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    .dash-card .card-body { min-width: 0; overflow: hidden; }
+    .row-equal > [class*="col-"] { display: flex; min-width: 0; }
+    .row-equal .dash-card { width: 100%; }
+
+    .chart-container {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+    #chart-container { height: 300px; }
+    #multipleLineChartContainer { height: 400px; }
+    #multipleLineChart_00Container,
+    #multipleLineChart_01Container,
+    #chart { min-height: 400px; }
+</style>
+
+<link rel="stylesheet" href="{% static 'assets/css/dentfact.css' %}">
+<link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/22.1.7/css/dx.light.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/perfect-scrollbar/1.5.5/css/perfect-scrollbar.min.css">
+{% endblock stylesheets %}
+
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Cuadro de mando</h1>
+</div>
+
+<!-- ⚠️ AJUSTAR URL: cambia 'home:dashboard' por el nombre real de tu URL -->
+<div id="dashboard-scroll"
+     class="page-inner"
+     data-url="{% url 'home:dashboard' %}">
+
+    <div class="row mt--2 row-equal">
+        <div class="col-md-6">
+            <div class="card dash-card">
+                <div class="card-body">
+                    <div class="card-title">Datos generales</div>
+                    <div class="d-flex flex-wrap justify-content-around pb-2 pt-4">
+                        <div class="px-2 pb-2 pb-md-0 text-center">
+                            <div id="circles-1"
+                                 data-value="{{ empresas_count }}"
+                                 role="img"
+                                 aria-label="Número de sociedades: {{ empresas_count }}"></div>
+                            <h5 class="fw-bold mt-3 mb-0" style="font-family: 'Verdana', sans-serif; font-weight: bold; color: #00FF00; font-size: 20px;">Sociedades</h5>
+                        </div>
+                        <div class="px-2 pb-2 pb-md-0 text-center">
+                            <div id="circles-2"
+                                 data-value="{{ centros_count }}"
+                                 role="img"
+                                 aria-label="Número de centros: {{ centros_count }}"></div>
+                            <h5 class="fw-bold mt-3 mb-0" style="font-family: 'Verdana', sans-serif; font-weight: bold; color: #00FF00; font-size: 20px;">Centros</h5>
+                        </div>
+                        <div class="px-2 pb-2 pb-md-0 text-center">
+                            <div id="circles-3"
+                                 data-value="{{ doctores_count }}"
+                                 role="img"
+                                 aria-label="Número de dentistas: {{ doctores_count }}"></div>
+                            <h5 class="fw-bold mt-3 mb-0" style="font-family: 'Verdana', sans-serif; font-weight: bold; color: #00FF00; font-size: 20px;">Dentistas</h5>
+                        </div>
+                        <div class="px-2 pb-2 pb-md-0 text-center">
+                            <div id="circles-4"
+                                 data-value="{{ especialidades_count }}"
+                                 role="img"
+                                 aria-label="Número de especialidades: {{ especialidades_count }}"></div>
+                            <h5 class="fw-bold mt-3 mb-0" style="font-family: 'Verdana', sans-serif; font-weight: bold; color: #00FF00; font-size: 20px;">Especialidades</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card dash-card">
+                <div class="card-body">
+                    <div class="card-title">Facturación</div>
+                    <div class="row py-3">
+                        <div class="col-md-4 d-flex flex-column justify-content-around">
+                            <div>
+                                <h6 class="fw-bold text-uppercase text-success op-8" style="font-family: 'Verdana', sans-serif; font-weight: bold; color: #00FF00; font-size: 20px;">Facturación</h6>
+                                <h3 id="total-facturacion" class="fw-bold" style="font-family: 'Verdana', sans-serif; font-weight: bold; color: #FFFFFF;">{{ total_facturacion }}</h3>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-uppercase text-success op-8" style="font-family: 'Verdana', sans-serif; font-weight: bold; color: #00FF00; font-size: 20px;">Gastos</h6>
+                                <h3 id="total-gastos" class="fw-bold" style="font-family: 'Verdana', sans-serif; font-weight: bold; color: #FFFFFF;">{{ total_gastos }}</h3>
+                            </div>
+                            <h6 class="fw-bold text-uppercase text-success op-8" style="font-family: 'Verdana', sans-serif; font-weight: bold; color: #00FF00; font-size: 20px;">Año</h6>
+                            <select id="year-select" class="custom-select">
+                                {% for y in years %}
+                                    <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <div id="chart-container" class="chart-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt--2">
+        <div class="col-md-12">
+            <div class="card dash-card">
+                <div class="card-body">
+                    <div class="card-title">Facturación por sociedades</div>
+                    <div id="multipleLineChartContainer" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt--2">
+        <div class="col-md-12">
+            <div class="card dash-card">
+                <div class="card-body">
+                    <div class="card-title">Facturación por centros</div>
+                    <div id="multipleLineChart_00Container" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt--2">
+        <div class="col-md-12">
+            <div class="card dash-card">
+                <div class="card-body">
+                    <div class="card-title">Facturación por dentistas</div>
+                    <div id="multipleLineChart_01Container" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt--2">
+        <div class="col-md-12">
+            <div class="card dash-card">
+                <div class="card-body">
+                    <div class="card-title">Facturación por especialidades</div>
+                    <div id="chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/highcharts.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/exporting.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/modules/accessibility.js"></script>
+<script src="{% static 'assets/js/circles.min.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ---- Flag de depuración desde Django ----
+    const DEBUG = {{ debug|yesno:"true,false" }};
+    function log(...args) { if (DEBUG) console.log(...args); }
+    function warn(...args) { if (DEBUG) console.warn(...args); }
+    function error(...args) { console.error(...args); }
+
+    // ---- URL del endpoint desde data-attribute ----
+    const dashboardScroll = document.getElementById('dashboard-scroll');
+    const DASHBOARD_URL = dashboardScroll ? dashboardScroll.dataset.url : null;
+    if (!DASHBOARD_URL) {
+        error('No se pudo determinar la URL del dashboard (falta data-url).');
+    }
+
+    const colors = [
+        '#00CED1', '#FF4081', '#32CD32', '#00B7EB',
+        '#00FF7F', '#FFE4E1', '#FFC107', '#1E90FF',
+        '#F0E68C', '#40E0D0', '#E6E6FA', '#FFDEAD'
+    ];
+    const centrosColors = [
+        '#5D8291', '#FF5733', '#4A7066', '#4682B4',
+        '#FFFACD', '#6B7280', '#FF9800', '#557A95',
+        '#FFEB3B', '#7395AE', '#5C7F7D', '#FF6F00'
+    ];
+
+    function convertToFloat(value) {
+        if (!value || value === "0,00" || value === "0,00 €") return 0;
+        const cleanedValue = String(value)
+            .trim()
+            .replace(/[^\d,.]/g, '')
+            .replace(/\.(?=\d{3})/g, '')
+            .replace(',', '.');
+        const num = parseFloat(cleanedValue);
+        return isNaN(num) ? 0 : num;
+    }
+
+    Highcharts.setOptions({
+        lang: {
+            contextButtonTitle: 'Menú de contexto',
+            downloadPNG: 'Descargar como PNG',
+            downloadJPEG: 'Descargar como JPEG',
+            downloadPDF: 'Descargar como PDF',
+            downloadSVG: 'Descargar como SVG',
+            printChart: 'Imprimir gráfico',
+            viewData: 'Ver datos de la tabla',
+            noData: 'No hay datos para mostrar',
+            viewFullscreen: 'Ver en pantalla completa',
+            decimalPoint: ',',
+            thousandsSep: '.',
+            months: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+            shortMonths: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+            weekdays: ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
+        }
+    });
+
+    const MESES_CORTOS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+    const commonOptions = {
+        xAxis: {
+            crosshair: true,
+            labels: { style: { fontSize: '14px', fontFamily: 'Verdana, sans-serif', fontWeight: 'bold', color: '#F4F5F0' } }
+        },
+        yAxis: {
+            min: 0,
+            title: { text: 'Euros', style: { fontSize: '14px', fontWeight: 'bold', fontFamily: 'Verdana, sans-serif', color: '#F4F5F0' } },
+            labels: {
+                formatter: function() { return this.value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }); },
+                style: { fontSize: '14px', fontWeight: 'bold', fontFamily: 'Verdana, sans-serif', color: '#F4F5F0' }
+            }
+        },
+        legend: {
+            align: 'center',
+            verticalAlign: 'bottom',
+            itemStyle: { color: '#FFFFFF', fontWeight: 'bold', fontSize: '14px', fontFamily: 'Arial, sans-serif' },
+            itemHoverStyle: { color: '#FFD700' },
+            itemHiddenStyle: { color: '#808080' }
+        },
+        tooltip: { valueDecimals: 2, valuePrefix: '€' }
+    };
+
+    // ---- Círculos ----
+    function createCircle(elementId, value, maxValue, color) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        el.querySelectorAll('.circles-wrp').forEach(n => n.remove());
+        try {
+            Circles.create({
+                id: elementId,
+                radius: 60,
+                value: value,
+                maxValue: maxValue,
+                width: 10,
+                text: function(v) { return Math.round(v); },
+                colors: ['#f1f1f1', color],
+                duration: 400,
+                wrpClass: 'circles-wrp',
+                textClass: 'circles-text',
+                styleWrapper: true,
+                styleText: true
+            });
+        } catch (e) {
+            error('Error creating circle:', e);
+        }
+    }
+
+    const circleConfig = [
+        { id: 'circles-1', key: 'sociedades_count',     color: '#04d9c4' },
+        { id: 'circles-2', key: 'centros_count',        color: '#f0e811' },
+        { id: 'circles-3', key: 'doctores_count',       color: '#f01313' },
+        { id: 'circles-4', key: 'especialidades_count', color: '#a910eb' }
+    ];
+
+    function renderCircles(values) {
+        const nums = values.map(v => Number(v) || 0);
+        const max = Math.max(100, ...nums);
+        circleConfig.forEach((c, i) => createCircle(c.id, nums[i], max, c.color));
+    }
+
+    renderCircles(circleConfig.map(c => {
+        const el = document.getElementById(c.id);
+        return el ? Number(el.dataset.value) || 0 : 0;
+    }));
+
+    // ---- Carga de datos ----
+    function loadAllCharts(year) {
+        if (!year || year === 'undefined' || year === '') {
+            year = new Date().getFullYear().toString();
+            warn(`Year no definido, usando valor por defecto: ${year}`);
+        }
+
+        if (!DASHBOARD_URL) {
+            error('URL del dashboard no disponible.');
+            return;
+        }
+
+        log(`Cargando datos para el año ${year}`);
+
+        fetch(`${DASHBOARD_URL}?year=${encodeURIComponent(year)}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            log('Respuesta del servidor:', data);
+
+            const conteos = data.conteos || {};
+            renderCircles(circleConfig.map(c => conteos[c.key]));
+
+            const tf = document.getElementById('total-facturacion');
+            const tg = document.getElementById('total-gastos');
+            if (tf) tf.textContent = data.total_facturacion;
+            if (tg) tg.textContent = data.total_gastos;
+
+            renderFacturacionGastosChart(data);
+            renderSociedadesChart(data, year);
+            renderCentrosChart(data, year);
+            renderDentistasChart(data, year);
+            renderEspecialidadesChart(data, year);
+        })
+        .catch(err => {
+            error('Error al cargar los datos:', err);
+            document.querySelectorAll('.chart-container').forEach(container => {
+                container.innerHTML = `<p>Error al cargar el gráfico: ${err.message}</p>`;
+            });
+        });
+    }
+
+    // ---- Facturación y Gastos ----
+    function renderFacturacionGastosChart(data) {
+        const facturacionData = (data.facturacion_mensual || []).map(convertToFloat);
+        const gastosData = (data.gastos_mensual || []).map(convertToFloat);
+        const maxValor = Math.max(...facturacionData, ...gastosData, 1000);
+
+        Highcharts.chart('chart-container', {
+            ...commonOptions,
+            chart: {
+                type: 'column',
+                height: 300,
+                backgroundColor: null
+            },
+            title: { text: '' },
+            xAxis: {
+                ...commonOptions.xAxis,
+                categories: MESES_CORTOS,
+                min: 0,
+                max: 11,
+                tickInterval: 1,
+                labels: {
+                    style: {
+                        fontSize: '12px',
+                        fontFamily: 'Verdana, sans-serif',
+                        fontWeight: 'bold',
+                        color: '#F4F5F0'
+                    }
+                }
+            },
+            yAxis: {
+                ...commonOptions.yAxis,
+                type: 'linear',
+                min: 0,
+                max: maxValor * 1.2,
+                labels: {
+                    formatter: function() {
+                        return this.value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+                    },
+                    style: {
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        fontFamily: 'Verdana, sans-serif',
+                        color: '#F4F5F0'
+                    }
+                },
+                title: {
+                    text: 'Euros',
+                    style: {
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        fontFamily: 'Verdana, sans-serif',
+                        color: '#F4F5F0'
+                    }
+                }
+            },
+            plotOptions: {
+                column: {
+                    pointPadding: 0.1,
+                    groupPadding: 0.2,
+                    borderWidth: 1,
+                    borderColor: '#000000',
+                    // Labels desactivados: con muchas columnas se solapan y son ilegibles.
+                    // El detalle se obtiene por tooltip al pasar el ratón.
+                    dataLabels: {
+                        enabled: false
+                    }
+                }
+            },
+            series: [
+                { name: 'Facturación', data: facturacionData, color: '#30f23d' },
+                { name: 'Gastos',      data: gastosData,      color: '#edf259' }
+            ],
+            credits: { enabled: false }
+        });
+    }
+
+    // ---- Sociedades ----
+    function renderSociedadesChart(data, year) {
+        const series = (data.sociedades_data || []).map((serie, i) => ({
+            name: serie.label,
+            data: (serie.data || []).map(Number),
+            color: colors[i % colors.length]
+        }));
+
+        const maxSerie = series.length
+            ? Math.max(...series.flatMap(s => s.data), 1000)
+            : 1000;
+
+        Highcharts.chart('multipleLineChartContainer', {
+            ...commonOptions,
+            chart: { type: 'line', height: 400, backgroundColor: null },
+            title: {
+                text: `Facturación por sociedades - ${year}`,
+                style: { color: '#F4F5F0', fontSize: '18px', fontFamily: 'Verdana, sans-serif' }
+            },
+            xAxis: {
+                ...commonOptions.xAxis,
+                categories: MESES_CORTOS,
+                min: 0,
+                max: 11
+            },
+            yAxis: {
+                ...commonOptions.yAxis,
+                min: 0,
+                max: maxSerie * 1.2
+            },
+            plotOptions: {
+                line: {
+                    dataLabels: {
+                        enabled: true,
+                        formatter: function() {
+                            return this.y > 0
+                                ? this.y.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
+                                : null;
+                        },
+                        style: { color: '#FFFFFF', textOutline: '1px contrast' }
+                    },
+                    marker: { enabled: true }
+                }
+            },
+            series: series,
+            credits: { enabled: false }
+        });
+    }
+
+    // ---- Centros ----
+    function renderCentrosChart(data, year) {
+        const centrosData = data.facturacion_centro_data;
+        const container = document.getElementById('multipleLineChart_00Container');
+
+        if (!centrosData || !centrosData.series || !centrosData.categories || centrosData.series.length === 0) {
+            if (container) container.innerHTML = '<p>No hay datos disponibles para este año.</p>';
+            return;
+        }
+
+        const centros = centrosData.series.map(s => s.name);
+        const meses = centrosData.categories;
+        const seriesTransformed = meses.map((mes, mesIndex) => ({
+            name: mes,
+            data: centrosData.series.map(serie => Number(serie.data[mesIndex]) || 0),
+            color: centrosColors[mesIndex % centrosColors.length]
+        }));
+
+        const height = Math.max(400, 50 * centros.length);
+
+        Highcharts.chart('multipleLineChart_00Container', {
+            chart: { type: 'bar', height: height, backgroundColor: null },
+            title: {
+                text: `Facturación mensual por centros - ${year}`,
+                style: { color: '#F4F5F0', fontSize: '18px', fontFamily: 'Verdana, sans-serif' }
+            },
+            xAxis: {
+                categories: centros,
+                title: { text: 'Centros', style: { color: '#F4F5F0', fontSize: '14px', fontFamily: 'Verdana, sans-serif' } },
+                labels: { style: { fontSize: '10px', fontFamily: 'Verdana, sans-serif', fontWeight: 'bold', color: '#F4F5F0' } }
+            },
+            yAxis: {
+                title: { text: 'Facturación (€)', style: { color: '#F4F5F0', fontSize: '14px', fontFamily: 'Verdana, sans-serif' } },
+                labels: {
+                    formatter: function() {
+                        return this.value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+                    },
+                    style: { fontSize: '12px', fontWeight: 'bold', color: '#F4F5F0' }
+                },
+                stackLabels: {
+                    enabled: true,
+                    formatter: function() {
+                        return this.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+                    },
+                    style: { fontSize: '12px', fontWeight: 'bold', color: '#FFFFFF', textOutline: '1px contrast' }
+                }
+            },
+            plotOptions: {
+                bar: {
+                    stacking: 'normal',
+                    pointPadding: 0.1,
+                    groupPadding: 0.2,
+                    dataLabels: {
+                        enabled: true,
+                        formatter: function() {
+                            return this.y > 0
+                                ? this.y.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
+                                : null;
+                        },
+                        style: { fontSize: '10px', fontWeight: 'bold', color: '#FFFFFF', textOutline: '1px contrast' },
+                        inside: false
+                    }
+                }
+            },
+            series: seriesTransformed,
+            legend: {
+                enabled: true, align: 'center', verticalAlign: 'bottom',
+                itemStyle: { color: '#FFFFFF', fontWeight: 'bold', fontSize: '12px', fontFamily: 'Verdana, sans-serif' }
+            },
+            tooltip: { valueDecimals: 0, valuePrefix: '€', shared: true },
+            credits: { enabled: false }
+        });
+    }
+
+    // ---- Dentistas ----
+    function renderDentistasChart(data, year) {
+        const dentistasData = data.facturacion_dentistas_data;
+        const container = document.getElementById('multipleLineChart_01Container');
+
+        if (!dentistasData || !dentistasData.categories || !dentistasData.series ||
+            !dentistasData.categories.length || !dentistasData.series.length) {
+            if (container) container.innerHTML = '<p>No hay datos disponibles para Dentistas.</p>';
+            return;
+        }
+
+        Highcharts.chart('multipleLineChart_01Container', {
+            ...commonOptions,
+            chart: { type: 'bar', height: Math.max(400, 50 * dentistasData.categories.length), backgroundColor: null },
+            title: {
+                text: `Facturación mensual por dentistas - ${year}`,
+                style: { color: '#F4F5F0', fontSize: '18px', fontFamily: 'Verdana, sans-serif' }
+            },
+            xAxis: {
+                categories: dentistasData.categories,
+                labels: { style: { fontSize: '12px', fontWeight: 'bold', color: '#FFFFFF' } }
+            },
+            yAxis: {
+                ...commonOptions.yAxis,
+                stackLabels: {
+                    enabled: true,
+                    formatter: function() {
+                        return this.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+                    },
+                    style: { fontSize: '12px', fontWeight: 'bold', color: '#FFFFFF', textOutline: '1px contrast' }
+                }
+            },
+            legend: {
+                enabled: true, align: 'center', verticalAlign: 'bottom',
+                itemStyle: { color: '#FFFFFF', fontWeight: 'bold', fontSize: '14px' },
+                itemHoverStyle: { color: '#FFD700' }
+            },
+            plotOptions: {
+                bar: {
+                    stacking: 'normal',
+                    pointPadding: 0.1,
+                    groupPadding: 0.2,
+                    dataLabels: {
+                        enabled: true,
+                        format: '{y:,.2f} €',
+                        style: { fontSize: '11px', color: '#FFFFFF', textOutline: '1px contrast', fontWeight: 'bold' },
+                        inside: false
+                    }
+                }
+            },
+            colors: colors,
+            series: dentistasData.series,
+            tooltip: { valueDecimals: 2, valuePrefix: '€', shared: true },
+            credits: { enabled: false }
+        });
+    }
+
+    // ---- Especialidades (pie) ----
+    function renderEspecialidadesChart(data, year) {
+        const especialidadesData = data.facturacion_especialidad_data;
+        const container = document.getElementById('chart');
+
+        if (!Array.isArray(especialidadesData) || !especialidadesData.length) {
+            if (container) container.innerHTML = '<p>No hay datos disponibles para Especialidades.</p>';
+            return;
+        }
+
+        // Detección: puntos puros [{name, y}] vs series [{name, data}]
+        let pieSeries;
+        if (especialidadesData[0] && especialidadesData[0].data) {
+            pieSeries = especialidadesData;
+        } else {
+            pieSeries = [{ name: 'Especialidades', data: especialidadesData }];
+        }
+
+        Highcharts.chart('chart', {
+            chart: { type: 'pie', height: 400, backgroundColor: null },
+            title: {
+                text: `Facturación por especialidades - ${year}`,
+                style: { color: '#F4F5F0', fontSize: '18px', fontFamily: 'Verdana, sans-serif' }
+            },
+            series: pieSeries,
+            plotOptions: {
+                pie: {
+                    dataLabels: {
+                        enabled: true,
+                        format: '{point.name}: {point.y:,.2f} €',
+                        style: { color: '#FFFFFF', textOutline: '1px contrast' }
+                    }
+                }
+            },
+            credits: { enabled: false }
+        });
+    }
+
+    // ---- Reset de scroll del contenedor (no del window) ----
+    if (dashboardScroll) {
+        dashboardScroll.scrollTo({ top: 0 });
+    }
+
+    // ---- Resize con debounce via rAF ----
+    let _resizeRaf;
+    window.addEventListener('resize', function () {
+        cancelAnimationFrame(_resizeRaf);
+        _resizeRaf = requestAnimationFrame(function () {
+            Highcharts.charts.forEach(function (c) { if (c) c.reflow(); });
+        });
+    });
+
+    // ---- Arranque ----
+    const yearSelect = document.getElementById('year-select');
+    if (!yearSelect) {
+        error('El elemento con id "year-select" no se encontró en el DOM.');
+        loadAllCharts(new Date().getFullYear().toString());
+    } else {
+        const initialYear = yearSelect.value || new Date().getFullYear().toString();
+        loadAllCharts(initialYear);
+
+        yearSelect.addEventListener('change', function () {
+            loadAllCharts(this.value);
+        });
+    }
+});
+</script>
+{% endblock %}

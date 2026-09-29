@@ -1,0 +1,79 @@
+# ============================================================
+#  .gitignore para dentfact (Django + Atlantis + scripts .bat)
+# ============================================================
+
+# ------------------------------------------------------------
+# Entorno virtual de Python
+# ------------------------------------------------------------
+venv/
+env/
+ENV/
+.venv/
+*.egg-info/
+pip-log.txt
+
+# ------------------------------------------------------------
+# Bytecode de Python
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ------------------------------------------------------------
+# Django
+# ------------------------------------------------------------
+*.log
+db.sqlite3
+db.sqlite3-journal
+/media/
+/staticfiles/
+/static_root/
+/local_settings.py
+
+# Migraciones opcionales: descomenta solo si NO quieres
+# versionarlas (no recomendado en produccion).
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# ------------------------------------------------------------
+# Variables de entorno y secretos
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+
+# ------------------------------------------------------------
+# Scripts locales (no se suben al repositorio)
+# ------------------------------------------------------------
+dentfact_git.bat
+dentfact_local.bat
+*.bat
+!setup.bat
+
+# ------------------------------------------------------------
+# Editores / IDE
+# ------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ------------------------------------------------------------
+# Sistema operativo
+# ------------------------------------------------------------
+Thumbs.db
+Desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# ------------------------------------------------------------
+# Node (por si usas herramientas front de Atlantis)
+# ------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-error.log*

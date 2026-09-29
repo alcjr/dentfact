@@ -1,0 +1,482 @@
+:root {
+    --primary-color: #6f42c1;
+    --primary-dark: #5a2d91;
+    --secondary-color: #e83e8c;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Animated Background */
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    animation: backgroundMove 20s linear infinite;
+    z-index: -1;
+}
+
+@keyframes backgroundMove {
+    0% { transform: translateX(0) translateY(0); }
+    100% { transform: translateX(-10px) translateY(-10px); }
+}
+
+.login-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    max-width: 900px;
+    width: 100%;
+    min-height: 600px;
+    display: flex;
+    position: relative;
+}
+
+.login-left {
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    padding: 60px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+}
+
+.login-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"><animate attributeName="opacity" values="0.1;0.3;0.1" dur="3s" repeatCount="indefinite"/></circle><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"><animate attributeName="opacity" values="0.1;0.4;0.1" dur="4s" repeatCount="indefinite"/></circle><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"><animate attributeName="opacity" values="0.1;0.5;0.1" dur="2s" repeatCount="indefinite"/></circle></svg>');
+    opacity: 0.3;
+}
+
+.login-logo {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.login-title {
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin-bottom: 15px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.login-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feature-list li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.feature-list li i {
+    margin-right: 12px;
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.login-right {
+    flex: 1;
+    padding: 60px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.login-form-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.login-form-header h2 {
+    color: var(--dark-color);
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.login-form-header p {
+    color: #6c757d;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.form-floating {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.form-floating .form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px 15px 8px 15px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.form-floating .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+    background: white;
+}
+
+.form-floating label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.input-group-text {
+    background: #fafafa;
+    border: 2px solid #e9ecef;
+    border-right: none;
+    border-radius: 12px 0 0 12px;
+    color: #6c757d;
+}
+
+.input-group .form-control {
+    border-left: none;
+    border-radius: 0 12px 12px 0;
+}
+
+.input-group:focus-within .input-group-text {
+    border-color: var(--primary-color);
+    background: white;
+    color: var(--primary-color);
+}
+
+.password-toggle {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    z-index: 10;
+    padding: 5px;
+    border-radius: 4px;
+    transition: color 0.3s ease;
+}
+
+.password-toggle:hover {
+    color: var(--primary-color);
+}
+
+.form-check {
+    margin-bottom: 25px;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-label {
+    color: #495057;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-login {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    width: 100%;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(111, 66, 193, 0.3);
+    color: white;
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+.btn-login:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-login .spinner-border {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 8px;
+}
+
+.forgot-password {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.forgot-password a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.forgot-password a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+.alert-custom {
+    border: none;
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    animation: slideInDown 0.3s ease;
+}
+
+.alert-custom i {
+    margin-right: 10px;
+    font-size: 1.1rem;
+}
+
+/* Specific alert colors for Django messages */
+.alert-custom.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+.alert-custom.alert-error, .alert-custom.alert-danger { /* Django uses 'error' tag for errors */
+    background-color: #f8d7da;
+    color: #721c24;
+}
+.alert-custom.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+.alert-custom.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.validation-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--danger-color);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.system-status {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 15px 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    font-size: 0.85rem;
+    color: #6c757d;
+    z-index: 1000;
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success-color);
+    animation: pulse 2s infinite;
+}
+
+.status-dot.error {
+    background: var(--danger-color);
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.version-info {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+    z-index: 1000;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+        margin: 10px;
+        min-height: auto;
+    }
+    
+    .login-left {
+        padding: 40px 30px;
+        min-height: 300px;
+    }
+    
+    .login-right {
+        padding: 40px 30px;
+    }
+    
+    .login-title {
+        font-size: 2rem;
+    }
+    
+    .login-logo {
+        font-size: 3rem;
+    }
+    
+    .system-status,
+    .version-info {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        left: auto;
+        margin: 20px auto;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+    
+    .login-left,
+    .login-right {
+        padding: 30px 20px;
+    }
+    
+    .login-form-header h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Loading Animation */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.loading-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-content {
+    text-align: center;
+    color: var(--primary-color);
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(111, 66, 193, 0.1);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

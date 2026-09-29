@@ -1,0 +1,1147 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Dentistas{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/22.1.7/css/dx.light.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/perfect-scrollbar/1.5.5/css/perfect-scrollbar.min.css">
+<style>
+    .dx-popup-wrapper { overflow: visible !important; }
+    .dx-popup-content { max-height: 560px !important; overflow-y: auto; }
+    .dx-popup-bottom {
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background-color: white;
+        border-top: 1px solid #ddd;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+        padding: 10px !important;
+        z-index: 1100 !important;
+    }
+    .dx-popup-content .dx-scrollable-content { padding-bottom: 80px !important; }
+    .dx-notify { z-index: 10000 !important; }
+</style>
+<style>
+  /* --- Cabecera fija debajo del navegador --- */
+  .Factura_Header {
+      position: sticky;
+      top: 70px; /* altura aproximada del navbar */
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 15px;
+      margin: 20px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  .Factura_Header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+  }
+
+  /* Contenedor principal conserva la estética original */
+  .content {
+      padding: 15px 20px;
+      background-color: inherit; /* mantiene el fondo del tema base */
+  }
+
+  /* Contenedor con desplazamiento interno para el grid */
+  .grid-scroll {
+      max-height: calc(100vh - 200px); /* ajusta según navbar + header + footer */
+      overflow-y: auto;
+      overflow-x: hidden;
+      background-color: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+  }
+
+  #gridContainer {
+      width: 100%;
+  }
+
+  /* Evita doble scroll sin afectar layout general */
+  html, body {
+      height: 100%;
+      overflow-y: hidden;
+  }
+
+  /* ========================================================================== */
+  /* MEJORAS VISUALES EXCLUSIVAS PARA EL POPUP - SIN AFECTAR FUNCIONALIDAD */
+  /* ========================================================================== */
+  
+  .dx-popup-wrapper .dx-overlay-content {
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      animation: popupFadeIn 0.3s ease-out;
+  }
+
+  @keyframes popupFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+  }
+
+  .dx-popup-wrapper .dx-popup-title {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 30px;
+      font-size: 20px;
+      font-weight: 600;
+      border-radius: 0;
+      min-height: 65px;
+      display: flex;
+      align-items: center;
+      white-space: normal;
+      word-wrap: break-word;
+  }
+
+  .dx-popup-wrapper .dx-popup-content {
+      padding: 0;
+      background-color: #f8f9fa;
+  }
+
+  .dx-form {
+      background-color: white;
+      padding: 30px;
+  }
+
+  .dx-form .dx-fieldset {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background-color: #fdfdfe;
+  }
+
+  .dx-form .dx-fieldset .dx-fieldset-header {
+      font-size: 16px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 15px;
+  }
+
+  .dx-form .dx-field {
+      padding: 18px 0;
+      border-bottom: 1px solid #eef2f7;
+      display: flex;
+      align-items: flex-start;
+      min-height: 65px;
+  }
+
+  .dx-form .dx-field:last-child {
+      border-bottom: none;
+  }
+
+  .dx-form .dx-field-label {
+      font-weight: 600;
+      color: #2d3748;
+      width: 220px;
+      min-width: 220px;
+      font-size: 14px;
+      padding-right: 25px;
+      line-height: 1.4;
+      padding-top: 5px;
+  }
+
+  .dx-form .dx-field-value {
+      width: calc(100% - 220px);
+      flex: 1;
+  }
+
+  /* ICONOS PARA CAMPOS - SOLO ESTÉTICA */
+  .dx-form .dx-texteditor::before {
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #a0aec1;
+      font-size: 16px;
+      z-index: 1;
+  }
+
+  .dx-form [data-field="NOMBRE"] .dx-texteditor::before { content: "\f007"; }
+  .dx-form [data-field="I_APELLIDO"] .dx-texteditor::before { content: "\f2bb"; }
+  .dx-form [data-field="II_APELLIDO"] .dx-texteditor::before { content: "\f2bb"; }
+  .dx-form [data-field="DNI"] .dx-texteditor::before { content: "\f2c2"; }
+  .dx-form [data-field="CODIGO"] .dx-texteditor::before { content: "\f02b"; }
+  .dx-form [data-field="COLEGIADO"] .dx-texteditor::before { content: "\f19d"; }
+  .dx-form [data-field="GASTOS"] .dx-texteditor::before { content: "\f155"; }
+  .dx-form [data-field="CIF"] .dx-texteditor::before { content: "\f1ad"; }
+  .dx-form [data-field="ESTADO"] .dx-texteditor::before { content: "\f05a"; }
+  .dx-form [data-field="EMAIL"] .dx-texteditor::before { content: "\f0e0"; }
+  .dx-form [data-field="TELEFONO"] .dx-texteditor::before { content: "\f095"; }
+  .dx-form [data-field="DIRECCION"] .dx-texteditor::before { content: "\f3c5"; }
+  .dx-form [data-field="CIUDAD"] .dx-texteditor::before { content: "\f279"; }
+  .dx-form [data-field="POSTAL"] .dx-texteditor::before { content: "\f199"; }
+  .dx-form [data-field="CUENTA"] .dx-texteditor::before { content: "\f09d"; }
+
+  .dx-form .dx-texteditor input {
+      padding-left: 45px !important;
+  }
+
+  .dx-form .dx-texteditor {
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      transition: all 0.3s ease;
+      height: 48px;
+      background-color: #fafbfc;
+  }
+
+  .dx-form .dx-texteditor input {
+      padding: 12px 16px 12px 45px;
+      font-size: 15px;
+  }
+
+  .dx-form .dx-texteditor.dx-state-focused {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+      background-color: white;
+  }
+
+  .dx-popup-wrapper .dx-popup-normal .dx-overlay-content {
+      width: 850px !important;
+      max-width: 90vw;
+  }
+
+  .dx-popup-title .dx-toolbar-label {
+      white-space: normal !important;
+      text-overflow: unset !important;
+      overflow: visible !important;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<!-- Barra de cabecera fija -->
+<div class="Factura_Header">
+    <h1>Listado maestro de dentistas</h1>
+</div>
+
+<!-- Contenedor principal y rejilla de datos -->
+<div class="content">
+    <div class="grid-scroll">
+        <div id="gridContainer"></div>
+    </div>
+</div>
+
+<!-- LoadPanel global -->
+<div id="globalLoadPanel"></div>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.0/dist/perfect-scrollbar.min.js"></script>
+<script src="https://cdn3.devexpress.com/jslib/22.1.7/js/dx.all.js"></script>
+<script type="text/javascript">var csrfToken = "{{ csrf_token }}";</script>
+<script>
+    $(document).ready(function() {
+        console.log("Inicializando página de dentistas");
+        if (typeof DevExpress === 'undefined') {
+            console.error("DevExpress no cargado. Verifica la conexión.");
+            alert("Error: DevExpress 22.1.7 no se cargó. Revisa la red o CDN.");
+            return;
+        }
+        DevExpress.localization.locale("es");
+        
+        // Inicializar LoadPanel global
+        window.globalLoadPanel = $("#globalLoadPanel").dxLoadPanel({
+            visible: false,
+            shading: true,
+            message: 'Procesando...',
+            position: { of: '#gridContainer' }
+        }).dxLoadPanel('instance');
+        
+        inicializarGrid();
+    });
+
+    function generateSPCode(nombre, i_apellido, ii_apellido) {
+        const name = `${nombre || ''} ${i_apellido || ''} ${ii_apellido || ''}`.trim();
+        const hash = CryptoJS.SHA256(name).toString(CryptoJS.enc.Hex);
+        return 'SP' + hash.substring(0, 4).toUpperCase();
+    }
+
+    function generateDoctor(nombre, i_apellido, ii_apellido) {
+        return `${i_apellido || ''} ${ii_apellido || ''} ${nombre || ''}`.toUpperCase().trim().replace(/\s+/g, ' ');
+    }
+
+    function limpiarDatos(data) {
+        const cleanedData = {};
+        Object.entries(data).forEach(([key, value]) => {
+            if (value !== undefined) {
+                cleanedData[key] = value === null ? "" : value;
+            }
+        });
+        return cleanedData;
+    }
+
+    function validarDNI(dni) {
+        if (!dni) return false;
+        const dniRegex = /^[0-9]{8}[A-Z]$/;
+        return dniRegex.test(dni.toUpperCase());
+    }
+
+    function extractCompositeKey(key) {
+        let spcode, especialidad, centro;
+        
+        if (Array.isArray(key)) {
+            spcode = key[0];
+            especialidad = key[1];
+            centro = key[2];
+        } else if (typeof key === 'object') {
+            spcode = key.SPCODE;
+            especialidad = key.ESPECIALIDAD;
+            centro = key.CENTRO;
+        } else {
+            throw new Error('Formato de clave inválido');
+        }
+        
+        spcode = (spcode || '').toString().trim();
+        especialidad = (especialidad || '').toString().trim();
+        centro = (centro || '').toString().trim();
+        
+        if (!spcode || !especialidad || !centro) {
+            throw new Error(`Clave compuesta incompleta: SPCODE=${spcode}, ESPECIALIDAD=${especialidad}, CENTRO=${centro}`);
+        }
+        
+        return { spcode, especialidad, centro };
+    }
+
+    async function validarClaveCompuesta(spcode, especialidad, centro, excludeId = null) {
+        if (!spcode || !especialidad || !centro) {
+            throw new Error(`Faltan valores requeridos: SPCODE=${spcode}, ESPECIALIDAD=${especialidad}, CENTRO=${centro}`);
+        }
+        try {
+            const url = `/home/api/docpercent/?spcode=${encodeURIComponent(spcode)}&especialidad=${encodeURIComponent(especialidad)}&centro=${encodeURIComponent(centro)}`;
+            console.log(`Validando clave con URL: ${url}`);
+            const response = await fetch(url, { method: 'GET', credentials: 'include' });
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: No se pudo verificar la clave`);
+            }
+            const data = await response.json();
+            const exists = data.some(registro =>
+                registro.SPCODE === spcode &&
+                registro.ESPECIALIDAD === especialidad &&
+                registro.CENTRO === centro &&
+                (!excludeId || registro.id !== excludeId)
+            );
+            if (exists) {
+                throw new Error(`Ya existe un registro con SPCODE=${spcode}, ESPECIALIDAD=${especialidad}, CENTRO=${centro}`);
+            }
+        } catch (error) {
+            console.error('Error validando clave:', error);
+            throw error;
+        }
+    }
+
+    async function cargarDatos() {
+        try {
+            console.log(" Iniciando carga de datos...");
+            
+            const [empresas, especialidades, centros] = await Promise.all([
+                $.getJSON("/home/api/empresa/").catch(err => {
+                    console.error(" Error cargando empresas:", err);
+                    return [];
+                }),
+                $.getJSON("/home/api/especialidad/").catch(err => {
+                    console.error(" Error cargando especialidades:", err);
+                    return [];
+                }),
+                $.getJSON("/home/api/centro/").catch(err => {
+                    console.error(" Error cargando centros:", err);
+                    return [];
+                })
+            ]);
+            
+            window.empresasData = Array.isArray(empresas) ? empresas : [];
+            window.especialidadesData = Array.isArray(especialidades) ? especialidades : [];
+            window.centrosData = Array.isArray(centros) ? centros : [];
+            
+            console.log(" Datos cargados:", {
+                empresas: window.empresasData.length,
+                especialidades: window.especialidadesData.length,
+                centros: window.centrosData.length
+            });
+            
+            // Log detallado para debugging
+            console.log(" Empresas cargadas:", window.empresasData.map(e => ({ CIF: e.CIF, SOCIEDAD: e.SOCIEDAD })));
+            
+            return { 
+                empresas: window.empresasData, 
+                especialidades: window.especialidadesData, 
+                centros: window.centrosData 
+            };
+        } catch (error) {
+            console.error(" Error al cargar datos iniciales:", error);
+            DevExpress.ui.notify("Error al cargar datos iniciales", "error", 5000);
+            return { empresas: [], especialidades: [], centros: [] };
+        }
+    }
+
+    async function refreshMasterGrid() {
+        try {
+            window.globalLoadPanel.show();
+            const masterGrid = $("#gridContainer").dxDataGrid("instance");
+            if (!masterGrid) {
+                throw new Error('Grid maestro no encontrado');
+            }
+            
+            console.log(" Refrescando grid maestro");
+            await masterGrid.getDataSource().reload();
+            
+            // Esperar a que el DOM se actualice
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            console.log(" Grid maestro refrescado correctamente");
+            DevExpress.ui.notify('Datos actualizados correctamente', 'success', 2000);
+        } catch (error) {
+            console.error(' Error refrescando grid maestro:', error);
+            DevExpress.ui.notify(`Error al refrescar datos: ${error.message}`, 'error', 3000);
+            throw error;
+        } finally {
+            window.globalLoadPanel.hide();
+        }
+    }
+
+    async function refreshDetailGrid(spcode) {
+        try {
+            const masterGrid = $("#gridContainer").dxDataGrid("instance");
+            if (!masterGrid) {
+                throw new Error('Grid maestro no encontrado');
+            }
+            
+            console.log(" Refrescando grid de detalle para SPCODE:", spcode);
+            
+            // Recargar el grid maestro primero
+            await masterGrid.getDataSource().reload();
+            
+            // Esperar a que se actualice el DOM
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Si la fila está expandida, refrescar el grid de detalle específico
+            if (spcode && masterGrid.isRowExpanded(spcode)) {
+                const detailGridContainer = $(`#detailGridContainer_${spcode}`);
+                if (detailGridContainer.length) {
+                    const detailGrid = detailGridContainer.dxDataGrid("instance");
+                    if (detailGrid) {
+                        console.log(` Refrescando grid de detalle específico para SPCODE: ${spcode}`);
+                        await detailGrid.getDataSource().reload();
+                        const data = await detailGrid.getDataSource().load();
+                        console.log(` Datos cargados en detalle para SPCODE=${spcode}: ${data.length} registros`);
+                    }
+                }
+            }
+            
+            console.log(" Grid de detalle refrescado correctamente");
+        } catch (error) {
+            console.error(' Error refrescando grid de detalle:', error);
+            DevExpress.ui.notify(`Error al refrescar datos: ${error.message}`, 'error', 3000);
+            throw error;
+        }
+    }
+
+    const detailDataSource = new DevExpress.data.CustomStore({
+        key: ['SPCODE', 'ESPECIALIDAD', 'CENTRO'],
+        load: function(loadOptions) {
+            const params = {};
+            if (loadOptions.filter && Array.isArray(loadOptions.filter)) {
+                const filter = loadOptions.filter;
+                if (filter[0] === 'SPCODE' && filter[1] === '=') {
+                    params.spcode = filter[2];
+                } else if (Array.isArray(filter[0])) {
+                    const spcodeFilter = filter.find(f => Array.isArray(f) && f[0] === 'SPCODE' && f[1] === '=');
+                    if (spcodeFilter) {
+                        params.spcode = spcodeFilter[2];
+                    }
+                }
+            }
+            const queryString = new URLSearchParams(params).toString();
+            const url = `/home/api/docpercent/${queryString ? '?' + queryString : ''}`;
+            console.log(` Cargando detalle con URL: ${url}`);
+            return $.ajax({
+                url: url,
+                method: 'GET',
+                xhrFields: { withCredentials: true },
+                dataType: 'json',
+                cache: false,
+                timeout: 5000
+            }).then(response => {
+                const data = Array.isArray(response) ? response : [];
+                console.log(` Datos de detalle recibidos: ${data.length} registros`);
+                return { data: data, totalCount: data.length };
+            }).fail(jqXHR => {
+                const errorMsg = jqXHR.responseJSON?.error || jqXHR.responseText || 'Error desconocido';
+                console.error(` Error al cargar detalle: ${jqXHR.status} - ${errorMsg}`);
+                DevExpress.ui.notify(`Error al cargar porcentajes: ${errorMsg}`, "error", 3000);
+                return { data: [], totalCount: 0 };
+            });
+        },
+        insert: async function(values) {
+            try {
+                values.PORCENTAJE = Number(values.PORCENTAJE) || 0;
+                values.IRPF = Number(values.IRPF) || 0;
+                
+                if (!values.SPCODE || !values.ESPECIALIDAD || !values.CENTRO) {
+                    throw new Error("Faltan datos requeridos: SPCODE, ESPECIALIDAD o CENTRO");
+                }
+                
+                await validarClaveCompuesta(values.SPCODE, values.ESPECIALIDAD, values.CENTRO);
+                const datosLimpios = limpiarDatos(values);
+                
+                const response = await fetch("/home/api/docpercent/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: JSON.stringify(datosLimpios)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Error ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log(" Porcentaje insertado:", data);
+                
+                // Refrescar sin usar LoadPanel interno
+                await refreshDetailGrid(values.SPCODE);
+                
+                DevExpress.ui.notify("Porcentaje creado correctamente", "success", 2000);
+                return data;
+            } catch (error) {
+                console.error(" Error en insert porcentaje:", error);
+                DevExpress.ui.notify(error.message, "error", 5000);
+                throw error;
+            }
+        },
+        update: async function(key, values) {
+            try {
+                const { spcode, especialidad, centro } = extractCompositeKey(key);
+                
+                console.log(` Actualizando porcentaje: SPCODE=${spcode}, ESPECIALIDAD=${especialidad}, CENTRO=${centro}`);
+                
+                if (values.SPCODE || values.ESPECIALIDAD || values.CENTRO) {
+                    const newSpcode = values.SPCODE || spcode;
+                    const newEspecialidad = values.ESPECIALIDAD || especialidad;
+                    const newCentro = values.CENTRO || centro;
+                    
+                    if (newSpcode !== spcode || newEspecialidad !== especialidad || newCentro !== centro) {
+                        await validarClaveCompuesta(newSpcode, newEspecialidad, newCentro);
+                    }
+                }
+                
+                const datosLimpios = limpiarDatos(values);
+                const url = `/home/api/docpercent/${encodeURIComponent(spcode)}/${encodeURIComponent(especialidad)}/${encodeURIComponent(centro)}/`;
+                
+                const response = await fetch(url, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: JSON.stringify(datosLimpios)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (response.status === 404) {
+                        console.warn(` Porcentaje no encontrado`);
+                        DevExpress.ui.notify(`Registro no encontrado`, "warning", 3000);
+                        await refreshDetailGrid(spcode);
+                        throw new Error('Registro no encontrado');
+                    }
+                    throw new Error(errorData.error || `Error ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log(" Porcentaje actualizado:", data);
+                await refreshDetailGrid(spcode);
+                DevExpress.ui.notify("Porcentaje actualizado correctamente", "success", 2000);
+                return data;
+            } catch (error) {
+                console.error(" Error en update porcentaje:", error);
+                DevExpress.ui.notify(`Error al actualizar: ${error.message}`, "error", 5000);
+                throw error;
+            }
+        },
+        remove: async function(key) {
+            try {
+                const { spcode, especialidad, centro } = extractCompositeKey(key);
+                
+                console.log(` Eliminando porcentaje: SPCODE=${spcode}, ESPECIALIDAD=${especialidad}, CENTRO=${centro}`);
+                
+                const url = `/home/api/docpercent/${encodeURIComponent(spcode)}/${encodeURIComponent(especialidad)}/${encodeURIComponent(centro)}/`;
+                
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                
+                if (!response.ok && response.status !== 404) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Error ${response.status}`);
+                }
+                
+                console.log(" Porcentaje eliminado correctamente");
+                await refreshDetailGrid(spcode);
+                DevExpress.ui.notify('Porcentaje eliminado correctamente', 'success', 2000);
+            } catch (error) {
+                console.error(' Error al eliminar porcentaje:', error);
+                DevExpress.ui.notify(`Error al eliminar: ${error.message}`, 'error', 5000);
+                throw error;
+            }
+        }
+    });
+
+    const masterDataSource = new DevExpress.data.CustomStore({
+        key: "SPCODE",
+        load: function(loadOptions) {
+            const params = new URLSearchParams({ cache: Date.now() });
+            if (loadOptions.searchValue) params.append('search', loadOptions.searchValue);
+            
+            console.log(` Cargando dentistas con URL: /home/api/doctors/?${params.toString()}`);
+            
+            return $.ajax({
+                url: `/home/api/doctors/?${params.toString()}`,
+                method: 'GET',
+                xhrFields: { withCredentials: true },
+                dataType: 'json',
+                timeout: 5000
+            }).then(response => {
+                const data = Array.isArray(response) ? response : [];
+                console.log(` Cargados ${data.length} dentistas`);
+                return { data: data, totalCount: data.length };
+            }).fail(jqXHR => {
+                const errorMsg = jqXHR.responseJSON?.error || jqXHR.responseText || 'Error desconocido';
+                console.error(` Error al cargar dentistas: ${jqXHR.status} - ${errorMsg}`);
+                DevExpress.ui.notify(`Error al cargar dentistas: ${errorMsg}`, "error", 5000);
+                return { data: [], totalCount: 0 };
+            });
+        },
+        byKey: function(key) {
+            console.log(` Obteniendo dentista por clave: ${key}`);
+            return $.getJSON(`/home/api/doctors/${key}/`).then(data => {
+                console.log(` Dentista obtenido:`, data);
+                return data;
+            }).fail(jqXHR => {
+                console.error(" Error en byKey:", jqXHR);
+                return null;
+            });
+        },
+        insert: async function(values) {
+            try {
+                console.log(" Iniciando insert de dentista:", values);
+                
+                // Validar campos requeridos
+                if (!values.NOMBRE || !values.I_APELLIDO) {
+                    throw new Error("Nombre y primer apellido son requeridos");
+                }
+                
+                // Validar DNI
+                if (values.DNI && !validarDNI(values.DNI)) {
+                    throw new Error("DNI inválido: debe tener 8 dígitos y una letra");
+                }
+                
+                // Generar SPCODE y DOCTOR
+                values.SPCODE = generateSPCode(values.NOMBRE, values.I_APELLIDO, values.II_APELLIDO);
+                values.DOCTOR = generateDoctor(values.NOMBRE, values.I_APELLIDO, values.II_APELLIDO);
+                
+                const datosLimpios = limpiarDatos(values);
+                console.log(" Datos a enviar:", datosLimpios);
+                
+                const response = await fetch("/home/api/doctors/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: JSON.stringify(datosLimpios)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMsg = errorData.error || errorData.detail || `Error ${response.status}`;
+                    throw new Error(errorMsg);
+                }
+                
+                const data = await response.json();
+                console.log(" Dentista creado:", data);
+                
+                // Refrescar el grid maestro
+                await refreshMasterGrid();
+                
+                DevExpress.ui.notify("Dentista creado correctamente", "success", 2000);
+                return data;
+            } catch (error) {
+                console.error(" Error en insert dentista:", error);
+                DevExpress.ui.notify(`Error al crear dentista: ${error.message}`, "error", 5000);
+                throw error;
+            }
+        },
+        update: async function(key, values) {
+            try {
+                console.log(` Iniciando update de dentista: ${key}`, values);
+                
+                if (!key) {
+                    throw new Error("SPCODE requerido para actualización");
+                }
+                
+                // Validar DNI si está presente
+                if (values.DNI && !validarDNI(values.DNI)) {
+                    throw new Error("DNI inválido: debe tener 8 dígitos y una letra");
+                }
+                
+                // Regenerar DOCTOR si cambian los nombres
+                if (values.NOMBRE || values.I_APELLIDO || values.II_APELLIDO) {
+                    try {
+                        const existingRecord = await $.getJSON(`/home/api/doctors/${key}/`);
+                        values.DOCTOR = generateDoctor(
+                            values.NOMBRE ?? existingRecord.NOMBRE,
+                            values.I_APELLIDO ?? existingRecord.I_APELLIDO,
+                            values.II_APELLIDO ?? existingRecord.II_APELLIDO
+                        );
+                        console.log(" DOCTOR regenerado:", values.DOCTOR);
+                    } catch (error) {
+                        console.error(" Error al obtener registro existente:", error);
+                        throw new Error("No se pudo obtener el registro actual");
+                    }
+                }
+                
+                const datosLimpios = limpiarDatos(values);
+                console.log(" Datos a actualizar:", datosLimpios);
+                
+                const response = await fetch(`/home/api/doctors/${key}/`, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: JSON.stringify(datosLimpios)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMsg = errorData.error || errorData.detail || `Error ${response.status}`;
+                    throw new Error(errorMsg);
+                }
+                
+                const data = await response.json();
+                console.log(" Dentista actualizado:", data);
+                
+                // Refrescar el grid maestro
+                await refreshMasterGrid();
+                
+                DevExpress.ui.notify("Dentista actualizado correctamente", "success", 2000);
+                return data;
+            } catch (error) {
+                console.error(" Error en update dentista:", error);
+                DevExpress.ui.notify(`Error al actualizar dentista: ${error.message}`, "error", 5000);
+                throw error;
+            }
+        },
+        remove: async function(key) {
+            try {
+                console.log(` Iniciando remove de dentista: ${key}`);
+                
+                // Verificar si hay porcentajes asociados
+                const docpercentData = await $.getJSON(`/home/api/docpercent/?spcode=${key}`);
+                const docpercentCount = Array.isArray(docpercentData) ? docpercentData.length : 0;
+                
+                if (docpercentCount > 0) {
+                    console.log(` Dentista tiene ${docpercentCount} porcentajes asociados`);
+                    const confirmed = await DevExpress.ui.dialog.confirm(
+                        `Este dentista tiene ${docpercentCount} porcentaje(s) asociado(s). ¿Desea eliminarlo de todos modos?`,
+                        "Confirmar eliminación"
+                    );
+                    
+                    if (!confirmed) {
+                        console.log(" Eliminación cancelada por el usuario");
+                        throw new Error("Eliminación cancelada");
+                    }
+                }
+                
+                const response = await fetch(`/home/api/doctors/${key}/`, {
+                    method: "DELETE",
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                
+                if (!response.ok && response.status !== 204) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMsg = errorData.error || errorData.detail || `Error ${response.status}`;
+                    throw new Error(errorMsg);
+                }
+                
+                console.log(" Dentista eliminado correctamente");
+                
+                // Refrescar el grid maestro
+                await refreshMasterGrid();
+                
+                DevExpress.ui.notify("Dentista eliminado correctamente", "success", 2000);
+            } catch (error) {
+                if (error.message === "Eliminación cancelada") {
+                    // No mostrar error si el usuario canceló
+                    return;
+                }
+                console.error(" Error en remove dentista:", error);
+                DevExpress.ui.notify(`Error al eliminar dentista: ${error.message}`, "error", 5000);
+                throw error;
+            }
+        }
+    });
+
+    async function inicializarGrid() {
+        try {
+            const { empresas, especialidades, centros } = await cargarDatos();
+            
+            console.log(" Inicializando grid con empresas:", empresas.length);
+            if (empresas.length === 0) {
+                console.warn(" ⚠️ No se cargaron empresas. La columna CIF/SOCIEDAD estará vacía.");
+                DevExpress.ui.notify("Advertencia: No se cargaron datos de sociedades", "warning", 3000);
+            }
+            
+            $("#gridContainer").dxDataGrid({
+                dataSource: masterDataSource,
+                width: "100%",
+                height: "100%",
+                remoteOperations: false,
+                scrolling: { mode: "standard", showScrollbar: "always" },
+                export: {
+                    enabled: true,
+                    allowExportSelectedData: true,
+                    fileName: "dentistas"
+                },
+                columns: [
+                    { dataField: "SPCODE", caption: "Código", width: 120, allowEditing: false },
+                    { dataField: "DOCTOR", caption: "Dentista", width: 250, allowEditing: false },
+                    { dataField: "I_APELLIDO", caption: "I Apellido", width: 150 },
+                    { dataField: "II_APELLIDO", caption: "II Apellido", width: 150 },
+                    { dataField: "NOMBRE", caption: "Nombre", width: 150 },
+                    { dataField: "CODIGO", caption: "Colaborador", width: 120 },
+                    { dataField: "COLEGIADO", caption: "Colegiado", width: 120 },
+                    {
+                        dataField: "DNI",
+                        caption: "DNI",
+                        width: 100,
+                        validationRules: [{ type: "pattern", pattern: /^[0-9]{8}[A-Z]$/, message: "DNI inválido" }]
+                    },
+                    { dataField: "GASTOS", caption: "Gastos", dataType: "number", format: "#0.00 €", width: 100 },
+                    {
+                        dataField: "CIF",
+                        caption: "SOCIEDAD",
+                        width: 200,
+                        lookup: {
+                            dataSource: empresas,
+                            valueExpr: "CIF",
+                            displayExpr: "SOCIEDAD"
+                        },
+                        calculateDisplayValue: function(rowData) {
+                            const cifValue = rowData.CIF;
+                            if (!cifValue) {
+                                return "(Sin sociedad)";
+                            }
+                            
+                            // Buscar en las empresas cargadas
+                            const empresa = window.empresasData.find(e => e.CIF === cifValue);
+                            if (empresa) {
+                                return empresa.SOCIEDAD;
+                            } else {
+                                // Si no se encuentra, mostrar el CIF directamente sin warning
+                                return cifValue;
+                            }
+                        }
+                    },
+                    { dataField: "ESTADO", caption: "Estado", width: 100 },
+                    {
+                        dataField: "EMAIL",
+                        caption: "Email",
+                        width: 200,
+                        validationRules: [{ type: "email", message: "Email inválido" }]
+                    },
+                    { dataField: "DIRECCION", caption: "Dirección", width: 200 },
+                    { dataField: "CIUDAD", caption: "Ciudad", width: 150 },
+                    { dataField: "POSTAL", caption: "Postal", width: 100 },
+                    { dataField: "TELEFONO", caption: "Teléfono", width: 120 },
+                    { dataField: "CUENTA", caption: "Cuenta", width: 150 }
+                ],
+                showBorders: true,
+                rowAlternationEnabled: true,
+                columnAutoWidth: true,
+                columnHidingEnabled: true,
+                columnFixing: { enabled: true },
+                paging: { pageSize: 50 },
+                pager: {
+                    showPageSizeSelector: true,
+                    allowedPageSizes: [10, 20, 50, 100],
+                    showInfo: true,
+                    showNavigationButtons: true
+                },
+                filterRow: { visible: true, applyFilter: "auto" },
+                headerFilter: { visible: true, allowSearch: true },
+                searchPanel: { visible: true, width: 240, placeholder: "Buscar dentista..." },
+                editing: {
+                    mode: "popup",
+                    allowUpdating: true,
+                    allowDeleting: true,
+                    allowAdding: true,
+                    useIcons: true,
+                    popup: {
+                        title: "Dentista",
+                        showTitle: true,
+                        width: 1000,
+                        height: 700,
+                        position: { of: window, at: "center", my: "center" }
+                    },
+                    form: {
+                        colCount: 2,
+                        items: [
+                            {
+                                itemType: "group",
+                                caption: "Datos Personales",
+                                colSpan: 2,
+                                items: [
+                                    { dataField: "NOMBRE" },
+                                    { dataField: "I_APELLIDO" },
+                                    { dataField: "II_APELLIDO" },
+                                    { dataField: "DNI", validationRules: [{ type: "pattern", pattern: /^[0-9]{8}[A-Z]$/, message: "DNI inválido" }] }
+                                ]
+                            },
+                            {
+                                itemType: "group",
+                                caption: "Datos Profesionales",
+                                colSpan: 2,
+                                items: [
+                                    { dataField: "CODIGO" },
+                                    { dataField: "COLEGIADO" },
+                                    { dataField: "GASTOS" },
+                                    { dataField: "CIF" },
+                                    { dataField: "ESTADO" }
+                                ]
+                            },
+                            {
+                                itemType: "group",
+                                caption: "Información de Contacto",
+                                colSpan: 2,
+                                items: [
+                                    { dataField: "EMAIL", validationRules: [{ type: "email", message: "Email inválido" }] },
+                                    { dataField: "TELEFONO" },
+                                    { dataField: "DIRECCION" },
+                                    { dataField: "CIUDAD" },
+                                    { dataField: "POSTAL" }
+                                ]
+                            },
+                            {
+                                itemType: "group",
+                                caption: "Datos Financieros",
+                                colSpan: 2,
+                                items: [
+                                    { dataField: "CUENTA" }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                masterDetail: {
+                    enabled: true,
+                    template: function(container, options) {
+                        const detailGridId = `detailGridContainer_${options.key}`;
+                        $('<div id="' + detailGridId + '">').appendTo(container).dxDataGrid({
+                            dataSource: {
+                                store: detailDataSource,
+                                filter: ["SPCODE", "=", options.key]
+                            },
+                            height: 400,
+                            remoteOperations: false,
+                            columns: [
+                                { dataField: "SPCODE", caption: "Código", allowEditing: false, width: 120, visible: false },
+                                {
+                                    dataField: "ESPECIALIDAD",
+                                    caption: "Especialidad",
+                                    width: 200,
+                                    lookup: {
+                                        dataSource: especialidades,
+                                        valueExpr: "ESPECIALIDAD",
+                                        displayExpr: "ESPECIALIDAD"
+                                    },
+                                    validationRules: [{ type: "required", message: "Especialidad requerida" }]
+                                },
+                                {
+                                    dataField: "CENTRO",
+                                    caption: "Centro",
+                                    width: 150,
+                                    lookup: {
+                                        dataSource: centros,
+                                        valueExpr: "CENTRO",
+                                        displayExpr: "CENTRO"
+                                    },
+                                    validationRules: [{ type: "required", message: "Centro requerido" }]
+                                },
+                                {
+                                    dataField: "PORCENTAJE",
+                                    caption: "Porcentaje",
+                                    dataType: "number",
+                                    format: "#0.00",
+                                    width: 120,
+                                    validationRules: [{ type: "range", min: 0, max: 100, message: "Porcentaje debe estar entre 0 y 100" }]
+                                },
+                                {
+                                    dataField: "IRPF",
+                                    caption: "IRPF",
+                                    dataType: "number",
+                                    format: "#0.00",
+                                    width: 100,
+                                    validationRules: [{ type: "range", min: 0, max: 100, message: "IRPF debe estar entre 0 y 100" }]
+                                }
+                            ],
+                            showBorders: true,
+                            rowAlternationEnabled: true,
+                            paging: { pageSize: 10 },
+                            onInitNewRow: function(e) {
+                                e.data.SPCODE = options.key;
+                            },
+                            onRowInserted: async function(e) {
+                                console.log(" Fila insertada en detalle, refrescando...");
+                                try {
+                                    await refreshDetailGrid(options.key);
+                                } catch (error) {
+                                    console.error(" Error en onRowInserted:", error);
+                                }
+                            },
+                            onRowUpdated: async function(e) {
+                                console.log(" Fila actualizada en detalle, refrescando...");
+                                try {
+                                    await refreshDetailGrid(options.key);
+                                } catch (error) {
+                                    console.error(" Error en onRowUpdated:", error);
+                                }
+                            },
+                            onRowRemoved: async function(e) {
+                                console.log(" Fila eliminada en detalle, refrescando...");
+                                try {
+                                    await refreshDetailGrid(options.key);
+                                } catch (error) {
+                                    console.error(" Error en onRowRemoved:", error);
+                                }
+                            },
+                            editing: {
+                                mode: "row",
+                                allowUpdating: true,
+                                allowDeleting: true,
+                                allowAdding: true,
+                                useIcons: true
+                            },
+                            toolbar: {
+                                items: [
+                                    {
+                                        location: "after",
+                                        widget: "dxButton",
+                                        options: {
+                                            icon: "add",
+                                            text: "Añadir",
+                                            onClick: function() {
+                                                $(`#${detailGridId}`).dxDataGrid("instance").addRow();
+                                            }
+                                        }
+                                    },
+                                    {
+                                        location: "after",
+                                        widget: "dxButton",
+                                        options: {
+                                            icon: "refresh",
+                                            hint: "Recargar porcentajes",
+                                            onClick: async function() {
+                                                await refreshDetailGrid(options.key);
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        });
+                    }
+                },
+                onRowInserted: async function(e) {
+                    console.log(" Dentista insertado, refrescando grid maestro...");
+                    try {
+                        await refreshMasterGrid();
+                    } catch (error) {
+                        console.error(" Error en onRowInserted:", error);
+                    }
+                },
+                onRowUpdated: async function(e) {
+                    console.log(" Dentista actualizado, refrescando grid maestro...");
+                    try {
+                        await refreshMasterGrid();
+                    } catch (error) {
+                        console.error(" Error en onRowUpdated:", error);
+                    }
+                },
+                onRowRemoved: async function(e) {
+                    console.log(" Dentista eliminado, refrescando grid maestro...");
+                    try {
+                        await refreshMasterGrid();
+                    } catch (error) {
+                        console.error(" Error en onRowRemoved:", error);
+                    }
+                },
+                toolbar: {
+                    items: [
+                        {
+                            location: "before",
+                            template: function() {
+                                return $("<div>")
+                                    .text("")
+                                    .css({
+                                        "font-size": "20px",
+                                        "font-weight": "bold",
+                                        "color": "#192a4f",
+                                        "padding": "10px"
+                                    });
+                            }
+                        },
+                        {
+                            location: "after",
+                            widget: "dxButton",
+                            options: {
+                                icon: "add",
+                                text: "Nuevo Dentista",
+                                type: "success",
+                                onClick: function() {
+                                    $("#gridContainer").dxDataGrid("instance").addRow();
+                                }
+                            }
+                        },
+                        {
+                            location: "after",
+                            widget: "dxButton",
+                            options: {
+                                icon: "refresh",
+                                hint: "Recargar datos",
+                                onClick: async function() {
+                                    await refreshMasterGrid();
+                                    DevExpress.ui.notify("Datos actualizados", "info", 1000);
+                                }
+                            }
+                        }
+                    ]
+                }
+            });
+        } catch (error) {
+            console.error("Error inicializando grid:", error);
+            DevExpress.ui.notify("Error al inicializar la aplicación", "error", 10000);
+        }
+    }
+</script>
+{% endblock javascripts %}

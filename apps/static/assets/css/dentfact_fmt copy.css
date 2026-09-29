@@ -1,0 +1,312 @@
+@font-face {
+    font-family: SourceSansPro;
+    src: url(SourceSansPro-Regular.ttf);
+}
+
+.clearfix:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+a {
+    color: #006699;
+    text-decoration: none;
+}
+
+/* Estilos para impresión */
+@media print {
+    #factura-content, #factura-content2 {
+        page-break-inside: avoid;
+    }
+    .barra-tareas {
+        display: none;
+    }
+}
+
+/* Ajustar el layout general */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    width: 21cm;
+    min-height: 29.7cm;
+    margin: 0 auto;
+    padding: 0.5cm;
+    color: #555555;
+    background: #FFFFFF;
+    font-family: 'Source Sans Pro', Arial, sans-serif;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* Centrar el contenedor .card */
+.card {
+    width: 100%;
+    max-width: 21cm;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* Asegurar que las secciones internas estén centradas */
+#factura-content, #factura-content2 {
+    width: 100%;
+    margin: 0 auto;
+    page-break-inside: avoid;
+    box-sizing: border-box;
+}
+
+#factura-content {
+    page-break-after: always;
+}
+
+#factura-content2 {
+    page-break-before: avoid;
+}
+
+/* Encabezado de la factura (centrado) */
+#invoice {
+    text-align: center;
+    clear: both;
+    margin: 15px auto;
+    width: 100%;
+}
+
+#invoice h1 {
+    color: #006699;
+    font-size: 2.2em;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+}
+
+#invoice .date {
+    font-size: 1.1em;
+    color: #777777;
+}
+
+/* Ajustar el contenedor de detalles para Emisor y Receptor */
+#details {
+    margin-bottom: 20px;
+    clear: both;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Ajustar los bloques Emisor y Receptor */
+#client {
+    padding-left: 8px;
+    border-left: 4px solid #006699;
+    width: 45%;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+    float: left;
+}
+
+#client2 {
+    padding-left: 8px;
+    border-left: 4px solid #006699;
+    width: 45%;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+    float: right;
+}
+
+#client .to, #client2 .to {
+    color: #777777;
+}
+
+h2.name, h2.name2 {
+    font-size: 1.5em;
+    color: #333333;
+    font-weight: normal;
+    margin: 0;
+}
+
+/* Tablas */
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0 auto 15px auto;
+    clear: both;
+    width: 100%;
+    max-width: 100%;
+    table-layout: auto; /* Asegurar que el diseño de la tabla sea flexible */
+}
+
+table th, table td {
+    padding: 10px;
+    background: #F5F5F5;
+    text-align: center;
+    border-bottom: 1px solid #E0E0E0;
+}
+
+table th {
+    white-space: nowrap;
+    font-weight: normal;
+}
+
+table td {
+    text-align: right;
+}
+
+table td h3 {
+    color: #006699;
+    font-size: 1.1em;
+    font-weight: normal;
+    margin: 0 0 0.2em 0;
+}
+
+table .no {
+    color: #FFFFFF;
+    font-size: 1em;
+    background: #006699;
+    text-align: left;
+    vertical-align: middle;
+    padding: 8px;
+    white-space: nowrap; /* Evitar que el texto se divida en varias líneas */
+}
+
+table .desc {
+    text-align: left;
+}
+
+table .unit {
+    background: #DDDDDD;
+}
+
+table .total, table .gastos {
+    background: #006699;
+    color: #FFFFFF;
+    font-size: 1.1em;   
+}
+
+table td.unit, table td.qty, table td.total {
+    font-size: 1.1em;
+}
+
+table tbody tr:last-child td {
+    border: none;
+}
+
+table tfoot td {
+    padding: 8px 15px;
+    background: #FFFFFF;
+    border-bottom: none;
+    font-size: 1.2em;
+    white-space: nowrap;
+    border-top: 1px solid #AAAAAA;
+    text-align: right; /* Asegurar que el texto en tfoot esté alineado a la derecha */
+}
+
+table tfoot tr:first-child td {
+    border-top: none;
+}
+
+table tfoot tr:last-child td {
+    color: #006699;
+    font-size: 1.4em;
+    font-weight: bold;
+    border-top: 1px solid #006699;
+}
+
+table tfoot tr td:first-child {
+    border: none;
+}
+
+/* Avisos */
+#notices {
+    padding-left: 8px;
+    border-left: 4px solid #006699;
+    margin: 0 auto 20px auto;
+    clear: both;
+    width: 100%;
+    max-width: 21cm;
+}
+
+#notices .notice {
+    font-size: 0.95em;
+    color: #666666;
+}
+
+/* Pie de página */
+footer {
+    color: #777777;
+    width: 100%;
+    height: 30px;
+    position: relative;
+    bottom: 0;
+    border-top: 1px solid #AAAAAA;
+    padding: 8px 0;
+    text-align: center;
+    margin-top: 30px;
+    clear: both;
+}
+
+/* Barra de tareas */
+.barra-tareas {
+    text-align: center;
+    padding: 10px 0;
+    background-color: #d8dde2;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.barra-tareas .btn {
+    margin: 0 10px;
+    padding: 10px 20px;
+    text-decoration: none;
+    background-color: #3498db;
+    color: white;
+    border-radius: 5px;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.barra-tareas .btn:hover {
+    background-color: #2980b9;
+    transform: scale(1.05);
+}
+
+/* Ajustar las celdas de la tabla para la columna TOTAL y GASTOS */
+table .total, table .gastos {
+    background: #006699;
+    color: #FFFFFF;
+    font-size: 1em; /* Reducir ligeramente el tamaño de la fuente para evitar desbordamiento */
+    white-space: nowrap; /* Evitar que el texto se divida en varias líneas */
+    padding: 8px 12px; /* Ajustar el padding para dar más espacio */
+}
+
+/* Asegurar que la columna TOTAL tenga suficiente ancho */
+table th.total, table td.total, table td.gastos {
+    min-width: 100px; /* Aumentar el ancho mínimo de la columna */
+    text-align: right; /* Mantener la alineación a la derecha */
+}
+
+/* Ajustar el tamaño de las columnas para que el diseño sea más equilibrado */
+table th.no, table td.no {
+    width: 20%; /* Aumentar el ancho de la columna # para evitar truncamiento */
+}
+
+table th.desc, table td.desc {
+    width: 40%; /* Reducir ligeramente el ancho de la columna DESCRIPCIÓN para compensar */
+}
+
+table th.unit, table td.unit {
+    width: 15%; /* Mantener el ancho de la columna UNITARIO */
+}
+
+table th.qty, table td.qty {
+    width: 10%; /* Mantener el ancho de la columna CANTIDAD */
+}
+
+table th.total, table td.total, table td.gastos {
+    width: 15%; /* Mantener el ancho de la columna TOTAL */
+}

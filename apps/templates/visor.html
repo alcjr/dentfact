@@ -1,0 +1,508 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block stylesheets %}
+<style>
+
+ /* --- Layout general --- */
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; /* Evita scroll general de la página */
+}
+
+.log-viewer-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh; /* Toda la altura visible */
+  margin: 0;
+  padding: 20px;
+  background: #ffffff;
+  box-sizing: border-box;
+  overflow: hidden; /* Impide scroll del contenedor general */
+}
+
+.log-viewer-header {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 15px;
+  margin-top: 60px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.log-controls,
+.log-info {
+  flex-shrink: 0;
+}
+
+/* --- Área de logs --- */
+.log-content {
+  flex: 1; /* Ocupa el espacio restante */
+  background: #ffffff;
+  color: #333333;
+  padding: 15px;
+  border-radius: 8px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-y: auto; /* Solo aquí el scroll */
+  overflow-x: hidden;
+  border: 1px solid #e0e0e0;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* --- Estilo opcional para la barra de desplazamiento --- */
+.log-content::-webkit-scrollbar {
+  width: 10px;
+}
+.log-content::-webkit-scrollbar-thumb {
+  background-color: rgba(102, 126, 234, 0.6);
+  border-radius: 5px;
+}
+.log-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(102, 126, 234, 0.9);
+}
+
+  .log-viewer-header h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  /* --- Controles superiores --- */
+  .log-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .log-controls button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary {
+    background: #667eea;
+    color: white;
+  }
+  .btn-primary:hover { background: #5568d3; transform: translateY(-2px); }
+
+  .btn-secondary { background: #6c757d; color: white; }
+  .btn-secondary:hover { background: #5a6268; }
+
+  .btn-danger { background: #dc3545; color: white; }
+  .btn-danger:hover { background: #c82333; }
+
+  .log-controls input, .log-controls select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  /* --- Información del archivo --- */
+  .log-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    background: #e7f3ff;
+    border-left: 4px solid #667eea;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+
+  .log-info span { font-weight: 600; }
+
+  /* --- Área de logs --- */
+  .log-content {
+    flex: 1;
+    background: #ffffff;
+    color: #333333;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .log-line {
+    padding: 4px 8px;
+    border-bottom: 1px solid #f1f1f1;
+  }
+
+  .log-line:nth-child(even) { background: #fafafa; }
+
+  .log-line.error { color: #c0392b; background: #fdecea; }
+  .log-line.warning { color: #d68910; background: #fff6e5; }
+  .log-line.info { color: #2e86c1; }
+  .log-line.debug { color: #117a65; }
+
+  .log-timestamp {
+    color: #888;
+    margin-right: 10px;
+  }
+
+  .log-level {
+    font-weight: bold;
+    margin-right: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+
+  .level-error { background: #f8d7da; color: #721c24; }
+  .level-warning { background: #fff3cd; color: #856404; }
+  .level-info { background: #d1ecf1; color: #0c5460; }
+  .level-debug { background: #d6d8d9; color: #383d41; }
+
+  /* --- Indicadores --- */
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+  }
+  .spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+  }
+  @keyframes spin { 0% {transform: rotate(0deg);} 100% {transform: rotate(360deg);} }
+
+  .error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 20px;
+  }
+
+  .auto-refresh-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #28a745;
+    border-radius: 50%;
+    margin-left: 8px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100% {opacity: 1;} 50% {opacity: 0.3;} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="log-viewer-container">
+  <div class="log-viewer-header">
+    <h1>Visor de sucesos - DentFact</h1>
+    <div style="font-size: 14px;">
+      <span id="lastUpdate">Última actualización: {{ timestamp|default:"--:--:--" }}</span>
+    </div>
+  </div>
+
+  {% if error %}
+  <div id="errorContainer" class="error-message">
+    <strong>Error:</strong> {{ error }}
+  </div>
+  {% else %}
+  <div id="errorContainer"></div>
+  {% endif %}
+
+  <div class="log-controls">
+    <div class="filter-group">
+      <label for="logLevel">Nivel:</label>
+      <select id="logLevel">
+        <option value="all">Todos</option>
+        <option value="ERROR">ERROR</option>
+        <option value="WARNING">WARNING</option>
+        <option value="INFO">INFO</option>
+        <option value="DEBUG">DEBUG</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="searchText">Buscar:</label>
+      <input type="text" id="searchText" placeholder="Filtrar por texto...">
+    </div>
+
+    <div class="filter-group">
+      <label for="lineCount">Líneas:</label>
+      <select id="lineCount">
+        <option value="100">100</option>
+        <option value="500" selected>500</option>
+        <option value="1000">1000</option>
+        <option value="5000">5000</option>
+      </select>
+    </div>
+
+    <button class="btn-primary" onclick="loadLogFile()">Actualizar</button>
+
+    <div class="filter-group">
+      <label>
+        <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+        Auto-actualizar (30s)
+        <span id="autoRefreshIndicator" style="display: none;" class="auto-refresh-indicator"></span>
+      </label>
+    </div>
+
+    <!-- Fixed form action to use correct URL name -->
+    <button type="button" class="btn-danger" onclick="clearAndReload()">Limpiar y Recargar</button>
+    
+    
+  </div>
+
+  <div class="log-info">
+    <div>Archivo: <span id="logFilePath">{{ log_file_path|default:"C:\\data\\logs\\dentfact.log" }}</span></div>
+    <div>Tamaño: <span id="logFileSize">{{ log_file_size|default:"--" }}</span></div>
+    <div>Líneas: <span id="logLineCount">{{ log_line_count|default:"--" }}</span></div>
+  </div>
+
+  <div id="logContent" class="log-content">
+    {% if logs %}
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Cargando archivo de trazas...</p>
+      </div>
+    {% else %}
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Cargando archivo de trazas...</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+  let autoRefreshInterval = null;
+  let currentLogData = [];
+  
+  {% if logs %}
+    try {
+      currentLogData = {{ logs|safe }};
+      console.log('[v0] Logs iniciales cargados:', currentLogData.length, 'líneas');
+    } catch (e) {
+      console.error('[v0] Error parsing logs:', e);
+      currentLogData = [];
+    }
+  {% endif %}
+
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('[v0] DOM loaded, initializing log viewer');
+    
+    if (currentLogData && currentLogData.length > 0) {
+      displayLogContent({ lines: currentLogData });
+      updateLogInfo({
+        file_path: '{{ log_file_path|default:"C:\\data\\logs\\dentfact.log"|escapejs }}',
+        file_size: {{ log_file_size|default:0 }},
+        lines: currentLogData
+      });
+      updateLastUpdateTime();
+    } else {
+      loadLogFile();
+    }
+  });
+
+  function loadLogFile() {
+    const logContent = document.getElementById('logContent');
+    const lineCount = document.getElementById('lineCount').value;
+    
+    logContent.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando archivo de trazas...</p></div>';
+
+    const url = '{% url "home:load_log_json" %}' + (lineCount !== 'all' ? `?lines=${lineCount}` : '');
+    console.log('[v0] Loading logs from:', url);
+
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('[v0] Logs loaded successfully:', data.logs.length, 'lines');
+      if (data.success) {
+        currentLogData = data.logs || [];
+        displayLogContent(data);
+        updateLogInfo(data);
+        updateLastUpdateTime();
+        clearError();
+      } else {
+        showError(data.error || 'Error al cargar el archivo de trazas');
+      }
+    })
+    .catch(error => {
+      console.error('[v0] Error loading logs:', error);
+      showError('Error de conexión: ' + error.message);
+    });
+  }
+
+  function displayLogContent(data) {
+    const logContent = document.getElementById('logContent');
+    const logLevel = document.getElementById('logLevel').value;
+    const searchText = document.getElementById('searchText').value.toLowerCase();
+
+    let lines = data.lines || [];
+
+    if (logLevel !== 'all') {
+      lines = lines.filter(line => line.nivel.toUpperCase() === logLevel);
+    }
+
+    if (searchText) {
+      lines = lines.filter(line => {
+        const fullText = (line.fecha + ' ' + line.hora + ' ' + line.nivel + ' ' + line.module + ' ' + line.mensaje).toLowerCase();
+        return fullText.includes(searchText);
+      });
+    }
+
+    if (lines.length === 0) {
+      logContent.innerHTML = '<div class="loading"><p>No se encontraron líneas que coincidan con los filtros</p></div>';
+      return;
+    }
+
+    let html = '';
+    lines.forEach(line => {
+      html += `
+        <div class="log-line ${line.nivel.toLowerCase()}">
+          <span class="log-timestamp">${line.fecha} ${line.hora}</span>
+          <span class="log-level level-${line.nivel.toLowerCase()}">${line.nivel}</span>
+          <span>${line.module} ${line.mensaje}</span>
+        </div>
+      `;
+    });
+
+    logContent.innerHTML = html;
+    logContent.scrollTop = logContent.scrollHeight;
+  }
+
+  function updateLogInfo(data) {
+    document.getElementById('logFilePath').textContent = data.file_path || 'C:\\data\\logs\\dentfact.log';
+    document.getElementById('logFileSize').textContent = formatFileSize(data.file_size || 0);
+    document.getElementById('logLineCount').textContent = (data.lines || []).length;
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+  }
+
+  function updateLastUpdateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-ES');
+    document.getElementById('lastUpdate').textContent = `Última actualización: ${timeString}`;
+  }
+
+  function toggleAutoRefresh() {
+    const checkbox = document.getElementById('autoRefresh');
+    const indicator = document.getElementById('autoRefreshIndicator');
+
+    if (checkbox.checked) {
+      indicator.style.display = 'inline-block';
+      autoRefreshInterval = setInterval(loadLogFile, 30000);
+      console.log('[v0] Auto-refresh enabled');
+    } else {
+      indicator.style.display = 'none';
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+      }
+      console.log('[v0] Auto-refresh disabled');
+    }
+  }
+
+  function downloadLog() {
+    window.location.href = '{% url "home:download_log_file" %}';
+  }
+
+  function clearAndReload() {
+    if (confirm('¿Está seguro de que desea eliminar todos los logs?')) {
+      fetch('{% url "home:clear_logs" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'X-Requested-With': 'XMLHttpRequest',
+        }
+      })
+      .then(() => {
+        console.log('[v0] Logs cleared successfully');
+        currentLogData = [];
+        displayLogContent({ lines: [] });
+        updateLogInfo({ file_path: '{{ log_file_path|escapejs }}', file_size: 0, lines: [] });
+        updateLastUpdateTime();
+      })
+      .catch(error => {
+        console.error('[v0] Error clearing logs:', error);
+        showError('Error al limpiar logs: ' + error.message);
+      });
+    }
+  }
+
+  function showError(message) {
+    const errorContainer = document.getElementById('errorContainer');
+    errorContainer.innerHTML = `<div class="error-message"><strong>Error:</strong> ${message}</div>`;
+  }
+
+  function clearError() {
+    const errorContainer = document.getElementById('errorContainer');
+    errorContainer.innerHTML = '';
+  }
+
+  document.getElementById('logLevel').addEventListener('change', function() {
+    if (currentLogData && currentLogData.length > 0) {
+      displayLogContent({ lines: currentLogData });
+    }
+  });
+
+  document.getElementById('searchText').addEventListener('input', function() {
+    if (currentLogData && currentLogData.length > 0) {
+      displayLogContent({ lines: currentLogData });
+    }
+  });
+
+  document.getElementById('lineCount').addEventListener('change', function() {
+    loadLogFile();
+  });
+
+  window.addEventListener('beforeunload', function() {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+    }
+  });
+</script>
+{% endblock %}

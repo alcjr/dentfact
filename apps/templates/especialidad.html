@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Especialidades {% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/22.1.7/css/dx.light.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/perfect-scrollbar/1.5.5/css/perfect-scrollbar.min.css">
+<link rel="stylesheet" href="{% static 'assets/css/dentfact.css' %}">
+<style>
+  /* --- Cabecera fija debajo del navegador --- */
+  .Factura_Header {
+      position: sticky;
+      top: 70px; /* altura aproximada del navbar */
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 15px;
+      margin: 20px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  .Factura_Header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+  }
+
+  /* Contenedor principal conserva la estética original */
+  .content {
+      padding: 15px 20px;
+      background-color: inherit; /* mantiene el fondo del tema base */
+  }
+
+  /* Contenedor con desplazamiento interno para el grid */
+  .grid-scroll {
+      max-height: calc(100vh - 200px); /* ajusta según navbar + header + footer */
+      overflow-y: auto;
+      overflow-x: hidden;
+      background-color: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+  }
+
+  #gridContainer {
+      width: 100%;
+  }
+
+  /* Evita doble scroll sin afectar layout general */
+  html, body {
+      height: 100%;
+      overflow-y: hidden;
+  }
+
+  /* MEJORAS ESPECÍFICAS PARA EL POPUP */
+  .dx-popup-wrapper .dx-overlay-content {
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      animation: popupFadeIn 0.3s ease-out; /* Animación suave de entrada */
+  }
+
+  @keyframes popupFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+  }
+
+  .dx-popup-title {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 30px;
+      font-size: 20px;
+      font-weight: 600;
+      min-height: 65px;
+      display: flex;
+      align-items: center;
+      white-space: normal;
+      word-wrap: break-word;
+  }
+
+  .dx-popup-content {
+      padding: 0;
+      background-color: #f8f9fa;
+      max-height: 75vh;
+      overflow-y: auto;
+  }
+
+  .dx-form {
+      background-color: white;
+      padding: 30px;
+  }
+
+  .dx-form .dx-fieldset {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background-color: #fdfdfe;
+  }
+
+  .dx-form .dx-fieldset .dx-fieldset-header {
+      font-size: 16px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 15px;
+  }
+
+  .dx-form .dx-field {
+      padding: 18px 0;
+      border-bottom: 1px solid #eef2f7;
+      display: flex;
+      align-items: flex-start;
+      min-height: 65px;
+      position: relative;
+  }
+
+  .dx-form .dx-field:last-child {
+      border-bottom: none;
+  }
+
+  .dx-form .dx-field-label {
+      font-weight: 600;
+      color: #2d3748;
+      width: 220px;
+      min-width: 220px;
+      font-size: 14px;
+      padding-right: 25px;
+      line-height: 1.4;
+      padding-top: 5px;
+  }
+
+  .dx-form .dx-field-value {
+      width: calc(100% - 220px);
+      flex: 1;
+      position: relative;
+  }
+
+  /* ICONOS EN CAMPOS PARA MEJOR VISUALIZACIÓN */
+  .dx-form .dx-texteditor::before {
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #a0aec1;
+      font-size: 16px;
+      z-index: 1;
+  }
+
+  .dx-form [data-field="ESPECIALIDAD"] .dx-texteditor::before { content: "\f0b1"; } /* Icono de maletín (profesional) */
+  .dx-form [data-field="DESCRIPCION"] .dx-texteditor::before { content: "\f044"; } /* Icono de edición/descripción */
+
+  .dx-form .dx-texteditor input {
+      padding-left: 45px !important; /* Espacio para iconos */
+  }
+
+  /* CAMPOS DE ENTRADA MÁS AMPLIOS Y MEJOR ESTILIZADOS */
+  .dx-form .dx-texteditor {
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      transition: all 0.3s ease;
+      height: 48px;
+      width: 100%;
+      font-size: 15px;
+      background-color: #fafbfc;
+  }
+
+  .dx-form .dx-texteditor input {
+      padding: 12px 16px 12px 45px;
+      font-size: 15px;
+  }
+
+  .dx-form .dx-texteditor.dx-state-focused {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+      background-color: white;
+  }
+
+  .dx-form .dx-texteditor.dx-state-hover {
+      border-color: #cbd5e0;
+      background-color: white;
+  }
+
+  /* BOTONES MEJORADOS - MÁS ESPACIO ENTRE ELLOS */
+  .dx-popup-bottom .dx-toolbar {
+      background-color: white;
+      padding: 25px 30px 50px 30px; /* Aumentado padding inferior para espacio debajo de los botones */
+      border-top: 1px solid #eef2f7;
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+  }
+
+  .dx-popup-bottom .dx-toolbar-items-container {
+      display: flex;
+      justify-content: flex-end;
+      width: 100%;
+  }
+
+  .dx-popup-bottom .dx-toolbar-item {
+      margin: 0;
+  }
+
+  .dx-popup-bottom .dx-button {
+      border-radius: 8px;
+      font-weight: 600;
+      padding: 12px 32px;
+      transition: all 0.3s ease;
+      min-width: 140px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      text-transform: none;
+      letter-spacing: normal;
+  }
+
+  .dx-popup-bottom .dx-button .dx-button-content {
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+  }
+
+  .dx-popup-bottom .dx-button.dx-button-success {
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      color: white;
+      border: none;
+  }
+
+  .dx-popup-bottom .dx-button.dx-button-success:hover {
+      background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+  }
+
+  .dx-popup-bottom .dx-button.dx-button-default {
+      background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+      color: white;
+      border: none;
+  }
+
+  .dx-popup-bottom .dx-button.dx-button-default:hover {
+      background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(113, 128, 150, 0.3);
+  }
+
+  /* MEJORAS PARA CAMPOS OBLIGATORIOS - MÁS VISIBLES */
+  .dx-field-required .dx-field-label {
+      color: #2d3748;
+      position: relative;
+  }
+
+  .dx-field-required .dx-field-label:after {
+      content: " *";
+      color: #e53e3e;
+      font-weight: bold;
+      font-size: 16px;
+  }
+
+  /* ESTILO PARA MENSAJES DE ERROR */
+  .dx-invalid-message .dx-overlay-content {
+      background-color: #e53e3e;
+      color: white;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(229, 62, 62, 0.2);
+  }
+
+  /* ANCHO DEL POPUP AUMENTADO PARA EVITAR TÍTULO TRUNCADO */
+  .dx-popup-wrapper .dx-popup-normal .dx-overlay-content {
+      width: 700px !important; /* Ajustado para simplicidad de 2 campos */
+      max-width: 90vw;
+  }
+
+  /* RESPONSIVIDAD MEJORADA */
+  @media (max-width: 850px) {
+      .dx-popup-wrapper .dx-popup-normal .dx-overlay-content {
+          width: 95vw !important;
+      }
+      
+      .dx-form .dx-field {
+          flex-direction: column;
+          align-items: flex-start;
+          padding: 20px 0;
+      }
+      
+      .dx-form .dx-field-label {
+          width: 100%;
+          min-width: 100%;
+          padding-right: 0;
+          margin-bottom: 8px;
+      }
+      
+      .dx-form .dx-field-value {
+          width: 100%;
+      }
+      
+      .dx-popup-bottom .dx-toolbar {
+          flex-direction: column;
+          gap: 12px;
+      }
+      
+      .dx-popup-bottom .dx-button {
+          width: 100%;
+      }
+  }
+
+  @media (max-width: 600px) {
+      .dx-form .dx-fieldset {
+          padding: 15px;
+      }
+  }
+
+  /* MEJORA ESPECÍFICA PARA TÍTULO LARGO */
+  .dx-popup-title .dx-toolbar-label {
+      white-space: normal !important;
+      text-overflow: unset !important;
+      overflow: visible !important;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<!-- Barra de cabecera fija -->
+<div class="Factura_Header">
+    <h1>Listado maestro de especialidades</h1>
+</div>
+
+<!-- Contenedor principal y rejilla de datos -->
+<div class="content">
+    <div class="grid-scroll">
+        <div id="gridContainer"></div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.0/dist/perfect-scrollbar.min.js"></script>
+<script src="{% static 'assets/js/atlantis.min.js' %}"></script>
+<script src="https://cdn3.devexpress.com/jslib/22.1.7/js/dx.all.js"></script>
+
+<script>
+    DevExpress.localization.locale("es");
+
+    function getCSRFToken() {
+        let cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.startsWith("csrftoken=")) {
+                return cookie.substring("csrftoken=".length);
+            }
+        }
+        return null;
+    }
+
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!/^http/.test(settings.url) && ['POST', 'PUT', 'DELETE'].includes(settings.method)) {
+                const token = getCSRFToken();
+                if (token) {
+                    xhr.setRequestHeader("X-CSRFToken", token);
+                } else {
+                    console.warn("No CSRF token found");
+                }
+            }
+        }
+    });
+
+    $(function() {
+        $("#gridContainer").dxDataGrid({
+            dataSource: new DevExpress.data.CustomStore({
+                key: "ESPECIALIDAD",
+                load: function() {
+                    return $.ajax({
+                        url: "/home/api/especialidad/",
+                        method: "GET",
+                        dataType: "json",
+                    }).then(function(data) {
+                        return {
+                            data: data,
+                            totalCount: data.length
+                        };
+                    }).fail(function(xhr, status, error) {
+                        console.error("Error al cargar los datos:", xhr.status, status, error);
+                        alert("Error al cargar los datos: " + (xhr.responseJSON?.detail || error));
+                    });
+                },
+                insert: function(values) {
+                    console.log("Iniciando inserción:", values, "Tiempo:", new Date().toISOString());
+                    if (!values.ESPECIALIDAD) {
+                        alert("El campo ESPECIALIDAD es obligatorio.");
+                        return Promise.reject("El campo ESPECIALIDAD es obligatorio.");
+                    }
+                    return $.ajax({
+                        url: "/home/api/especialidad/",
+                        method: "POST",
+                        data: JSON.stringify(values),
+                        contentType: "application/json",
+                    }).done(function(response) {
+                        console.log("Inserción completada:", response, "Tiempo:", new Date().toISOString());
+                    }).fail(function(xhr, status, error) {
+                        console.error("Error en inserción:", xhr.responseJSON, "Tiempo:", new Date().toISOString());
+                        alert("Error al añadir la especialidad: " + (xhr.responseJSON?.detail || JSON.stringify(xhr.responseJSON) || error));
+                    });
+                },
+                update: function(key, values) {
+                    console.log("Iniciando actualización:", key, values, "Tiempo:", new Date().toISOString());
+                    const updatedValues = {
+                        ESPECIALIDAD: key, // Asegurarse de que ESPECIALIDAD siempre esté presente
+                        DESCRIPCION: values.DESCRIPCION || null
+                    };
+                    return $.ajax({
+                        url: `/home/api/especialidad/${encodeURIComponent(key)}/`,
+                        method: "PUT",
+                        data: JSON.stringify(updatedValues),
+                        contentType: "application/json",
+                    }).done(function(response) {
+                        console.log("Actualización completada:", response, "Tiempo:", new Date().toISOString());
+                    }).fail(function(xhr, status, error) {
+                        console.error("Error en actualización:", xhr.responseJSON, "Tiempo:", new Date().toISOString());
+                        alert("Error al actualizar la especialidad: " + (xhr.responseJSON?.detail || JSON.stringify(xhr.responseJSON) || error));
+                    });
+                },
+                remove: function(key) {
+                    console.log("CSRF Token:", getCSRFToken());
+                    console.log("Iniciando borrado:", key, "Tiempo:", new Date().toISOString());
+                    return $.ajax({
+                        url: `/home/api/especialidad/${encodeURIComponent(key)}/`,
+                        method: "DELETE",
+                        contentType: "application/json",
+                    }).done(function(response) {
+                        console.log("Borrado completado:", response, "Tiempo:", new Date().toISOString());
+                    }).fail(function(xhr, status, error) {
+                        console.error("Error en borrado:", xhr.status, status, error, xhr.responseJSON);
+                        alert("Error al eliminar la especialidad: " + (xhr.responseJSON?.detail || JSON.stringify(xhr.responseJSON) || error));
+                    });
+                }
+            }),
+            columns: [
+                { 
+                    dataField: "ESPECIALIDAD", 
+                    caption: "Especialidad", 
+                    validationRules: [{ type: "required", message: "Este campo es obligatorio." }],
+                    allowEditing: false // Evitar que el usuario modifique ESPECIALIDAD
+                },
+                { dataField: "DESCRIPCION", caption: "Descripción" }
+            ],
+            editing: {
+                mode: "popup",
+                allowAdding: true,
+                allowUpdating: true,
+                allowDeleting: true,
+                useIcons: true,
+                popup: {
+                    title: "Datos de la Especialidad",
+                    showTitle: true,
+                    width: 700,  // Ajustado para simplicidad
+                    height: "auto",
+                    minHeight: 400, // Altura mínima para evitar truncamiento
+                    position: { my: "center", at: "center", of: window },
+                    shading: true,
+                    shadingColor: "rgba(0,0,0,0.4)"
+                },
+                form: {
+                    colCount: 1,
+                    labelLocation: "left",
+                    items: [
+                        {
+                            itemType: "group",
+                            caption: "Información Principal",
+                            items: [
+                                {
+                                    dataField: "ESPECIALIDAD",
+                                    label: { text: "Especialidad" },
+                                    editorOptions: { 
+                                        readOnly: true, // Read-only en edición
+                                        placeholder: "Ingrese el código de la especialidad" 
+                                    }
+                                },
+                                {
+                                    dataField: "DESCRIPCION",
+                                    label: { text: "Descripción" },
+                                    editorType: "dxTextArea",
+                                    editorOptions: { 
+                                        height: 100,
+                                        placeholder: "Ingrese una descripción detallada" 
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                texts: {
+                    saveRowChanges: "Guardar",
+                    cancelRowChanges: "Cancelar",
+                    addRow: "Añadir Especialidad",
+                    editRow: "Editar Especialidad",
+                    deleteRow: "Eliminar Especialidad",
+                    confirmDeleteMessage: "¿Estás seguro de que deseas eliminar esta especialidad?"
+                }
+            },
+            onEditorPreparing: function(e) {
+                if (e.dataField === "ESPECIALIDAD" && e.parentType === "dataRow") {
+                    e.editorOptions.onValueChanged = function(args) {
+                        if (!args.value) {
+                            e.setValue(""); // Forzar la validación
+                            e.component.validate();
+                        }
+                    };
+                }
+            },
+            onSaving: function(e) {
+                const change = e.changes[0];
+                if (change && change.type === "insert") { // Solo validar en inserciones
+                    if (!change.data?.ESPECIALIDAD) {
+                        e.cancel = true;
+                        alert("El campo ESPECIALIDAD es obligatorio.");
+                    }
+                }
+            },
+            showBorders: true,
+            rowAlternationEnabled: true,
+            columnAutoWidth: true,
+            columnHidingEnabled: true,
+            paging: { pageSize: 50 },
+            pager: {
+                showPageSizeSelector: true,
+                allowedPageSizes: [10, 20, 50],
+                showInfo: true,
+                showNavigationButtons: true
+            },
+            filterRow: { visible: true },
+            headerFilter: { visible: true },
+            searchPanel: {
+                visible: true,
+                width: 240,
+                placeholder: "Buscar..."
+            },
+            toolbar: {
+                items: [
+                    {
+                        location: "before",
+                        template: function() {
+                            return $("<div>").text("").css({
+                                "font-family": "Verdana, Geneva, Tahoma, sans-serif",
+                                "font-size": "20px",
+                                "font-weight": "bold",
+                                "color": "#192a4f",
+                                "padding": "10px"
+                            });
+                        }
+                    },
+                    "searchPanel",
+                    {
+                        location: "after",
+                        widget: "dxButton",
+                        options: {
+                            icon: "add",
+                            text: "Añadir",
+                            onClick: function() {
+                                $("#gridContainer").dxDataGrid("instance").addRow();
+                            }
+                        }
+                    },
+                 
+                    {
+                        location: "after",
+                        widget: "dxButton",
+                        options: {
+                            icon: "fa fa-file-excel",
+                            text: "Exportar a Excel",
+                            onClick: function() {
+                                $("#gridContainer").dxDataGrid("instance").exportToExcel();
+                            }
+                        }
+                    }
+                ]
+            }
+        });
+    });
+</script>
+{% endblock javascripts %}

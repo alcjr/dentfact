@@ -1,0 +1,689 @@
+/* Variables CSS para formato A4 horizontal */
+:root {
+  --a4-width: 297mm;
+  --a4-height: 210mm;
+  --a4-margin: 12mm;
+  --content-width: calc(var(--a4-width) - 2 * var(--a4-margin));
+  --primary-color: #2c3e50;
+  --secondary-color: #3498db;
+  --success-color: #27ae60;
+  --warning-color: #f39c12;
+  --danger-color: #e74c3c;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  line-height: 1.3;
+  color: #333;
+  background: #f5f5f5;
+  padding: 8mm;
+  font-size: 10pt;
+}
+
+/* Contenedor principal optimizado para A4 horizontal */
+.factura-container {
+  width: var(--a4-width);
+  min-height: var(--a4-height);
+  max-width: var(--a4-width);
+  margin: 0 auto;
+  background: white;
+  overflow: hidden;
+  page-break-inside: avoid;
+}
+
+/* Estados de carga */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40mm;
+  font-size: 11pt;
+  color: #666;
+}
+
+.spinner {
+  border: 2pt solid #f3f3f3;
+  border-top: 2pt solid var(--secondary-color);
+  border-radius: 50%;
+  width: 6mm;
+  height: 6mm;
+  animation: spin 1s linear infinite;
+  margin-right: 4mm;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 6mm var(--a4-margin);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-content h1 {
+  font-size: 16pt;
+  font-weight: 300;
+  margin-bottom: 1mm;
+}
+
+.factura-numero {
+  font-size: 11pt;
+  opacity: 0.9;
+}
+
+.verifactur-badge {
+  background: rgba(46, 204, 113, 0.9);
+  padding: 2mm 4mm;
+  border-radius: 4mm;
+  font-size: 8pt;
+  font-weight: 600;
+  border: 1pt solid rgba(255, 255, 255, 0.3);
+}
+
+/* Toolbar */
+.toolbar {
+  background: #34495e;
+  padding: 2mm var(--a4-margin);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2mm;
+}
+
+.btn {
+  padding: 1.5mm 3mm;
+  border: none;
+  border-radius: 2mm;
+  cursor: pointer;
+  font-size: 8pt;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5mm;
+  color: white;
+}
+
+.btn-primary { background: linear-gradient(135deg, var(--secondary-color), #2980b9); }
+.btn-success { background: linear-gradient(135deg, var(--success-color), #229954); }
+.btn-warning { background: linear-gradient(135deg, var(--warning-color), #e67e22); }
+.btn-info { background: linear-gradient(135deg, #17a2b8, #138496); }
+
+.btn:hover {
+  transform: translateY(-0.5mm);
+  box-shadow: 0 1mm 3mm rgba(0, 0, 0, 0.2);
+}
+
+/* Contenido principal */
+.content {
+  padding: var(--a4-margin);
+  min-height: calc(var(--a4-height) - 40mm);
+}
+
+/* Grid de información */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4mm;
+  margin-bottom: 4mm;
+  page-break-inside: avoid;
+}
+
+.info-section {
+  background: #f8f9fa;
+  padding: 3mm;
+  border-radius: 2mm;
+  border-left: 2mm solid var(--secondary-color);
+  page-break-inside: avoid;
+}
+
+.info-section h3 {
+  color: var(--primary-color);
+  margin-bottom: 2mm;
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5mm;
+  padding: 0.5mm 0;
+  border-bottom: 0.5pt solid #eee;
+  font-size: 8pt;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #555;
+  min-width: 20mm;
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: #333;
+  text-align: right;
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  word-break: break-word;
+}
+
+/* Período de liquidación */
+.fechas-periodo {
+  background: #e8f4fd;
+  padding: 3mm;
+  border-radius: 2mm;
+  margin: 3mm 0;
+  border-left: 2mm solid var(--secondary-color);
+  page-break-inside: avoid;
+}
+
+.fechas-periodo h3 {
+  color: var(--primary-color);
+  margin-bottom: 2mm;
+  font-size: 9pt;
+}
+
+.periodo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2mm;
+}
+
+/* Sección de importes */
+.importes-section {
+  background: #f8f9fa;
+  padding: 3mm;
+  border-radius: 2mm;
+  margin: 3mm 0;
+  border-left: 2mm solid var(--secondary-color);
+  page-break-inside: avoid;
+}
+
+.importes-section h3 {
+  color: var(--primary-color);
+  margin-bottom: 2mm;
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+}
+
+.importe-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5mm;
+  padding: 0.5mm 0;
+  border-bottom: 0.5pt solid #eee;
+  font-size: 8pt;
+}
+
+.importe-item:last-child {
+  border-bottom: none;
+}
+
+.importe-item span:first-child {
+  font-weight: 600;
+  color: #555;
+  min-width: 20mm;
+  flex-shrink: 0;
+}
+
+.importe-item span:last-child {
+  color: #333;
+  text-align: right;
+  flex: 1;
+  font-family: 'Courier New', monospace;
+}
+
+.importe-item.total {
+  border-top: 2pt solid var(--secondary-color);
+  border-bottom: 2pt solid var(--secondary-color);
+  font-weight: bold;
+  font-size: 11pt;
+  color: var(--primary-color);
+  margin-top: 2mm;
+  padding: 2mm;
+  border-radius: 2mm;
+}
+
+/* Sección VERI*FACTUR */
+.verifactur-section {
+  background: linear-gradient(135deg, var(--success-color), #2ecc71);
+  color: white;
+  padding: 4mm;
+  border-radius: 2mm;
+  margin: 4mm 0;
+  page-break-inside: avoid;
+}
+
+.verifactur-section h3 {
+  margin-bottom: 3mm;
+  font-size: 10pt;
+  text-align: center;
+}
+
+.verifactur-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 4mm;
+  align-items: start;
+}
+
+.verifactur-item {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 2mm;
+  border-radius: 2mm;
+  border: 0.5pt solid rgba(255, 255, 255, 0.2);
+}
+
+.verifactur-label {
+  font-weight: 600;
+  margin-bottom: 1mm;
+  font-size: 7pt;
+  text-transform: uppercase;
+  letter-spacing: 0.3pt;
+}
+
+.verifactur-value {
+  font-family: 'Courier New', monospace;
+  font-size: 6pt;
+  word-break: break-all;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 1.5mm;
+  border-radius: 1mm;
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.5mm;
+  right: 0.5mm;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 0.5mm 1mm;
+  border-radius: 1mm;
+  cursor: pointer;
+  font-size: 6pt;
+}
+
+/* Contenedor QR */
+.qr-container {
+  text-align: center;
+  background: white;
+  padding: 3mm;
+  border-radius: 2mm;
+  box-shadow: 0 1mm 3mm rgba(0, 0, 0, 0.1);
+}
+
+.qr-container h4 {
+  color: var(--primary-color);
+  margin-bottom: 1.5mm;
+  font-size: 8pt;
+}
+
+.qr-code {
+  width: 20mm;
+  height: 20mm;
+  border: 1pt solid #ecf0f1;
+  border-radius: 2mm;
+}
+
+/* Footer */
+.footer {
+  background: linear-gradient(135deg, #34495e, var(--primary-color));
+  color: white;
+  padding: 3mm var(--a4-margin);
+  text-align: center;
+  font-size: 7pt;
+  margin-top: auto;
+}
+
+.footer p {
+  margin-bottom: 0.5mm;
+}
+
+/* Estados y badges */
+.estado-badge {
+  display: inline-block;
+  padding: 0.5mm 2mm;
+  border-radius: 2mm;
+  font-size: 6pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3pt;
+}
+
+.estado-alta {
+  background: #d4edda;
+  color: #155724;
+  border: 0.5pt solid #c3e6cb;
+}
+
+.estado-baja {
+  background: #f8d7da;
+  color: #721c24;
+  border: 0.5pt solid #f5c6cb;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: white;
+  margin: 5% auto;
+  padding: 6mm;
+  border-radius: 3mm;
+  width: 80%;
+  max-width: 100mm;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  right: 4mm;
+  top: 2mm;
+  font-size: 14pt;
+  font-weight: bold;
+  cursor: pointer;
+  color: #aaa;
+}
+
+.close:hover {
+  color: #333;
+}
+
+/* Notificaciones */
+.notification {
+  position: fixed;
+  top: 4mm;
+  right: 4mm;
+  padding: 2mm 4mm;
+  border-radius: 2mm;
+  color: white;
+  font-weight: 600;
+  z-index: 1001;
+  font-size: 8pt;
+}
+
+.notification.success {
+  background: linear-gradient(135deg, var(--success-color), #2ecc71);
+}
+
+.notification.error {
+  background: linear-gradient(135deg, var(--danger-color), #c0392b);
+}
+
+/* Estilos para impresión */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  body {
+    background: white;
+    padding: 0;
+    font-size: 8pt;
+    width: var(--a4-width);
+    height: var(--a4-height);
+    overflow: hidden;
+  }
+
+  .factura-container {
+    width: var(--a4-width);
+    height: var(--a4-height);
+    box-shadow: none;
+    margin: 0;
+  }
+
+  .toolbar,
+  .modal,
+  .notification,
+  .copy-btn {
+    display: none;
+  }
+
+  .header {
+    background: var(--primary-color);
+    padding: 1mm;
+    height: auto;
+  }
+
+  .header h1 {
+    font-size: 14pt;
+  }
+
+  .factura-numero {
+    font-size: 11pt;
+  }
+
+  .content {
+    padding: 1mm 3mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .info-grid {
+    gap: 2mm;
+    margin-bottom: 1mm;
+  }
+
+  .info-section {
+    border-left: 0.5mm solid var(--secondary-color);
+    padding: 1.5mm;
+  }
+
+  .info-section h3 {
+    font-size: 8pt;
+    margin-bottom: 1mm;
+  }
+
+  .info-row {
+    font-size: 7pt;
+    margin-bottom: 0.5mm;
+  }
+
+  .fechas-periodo {
+    background: #e8f4fd;
+    padding: 1.5mm;
+    margin: 1mm 0;
+    border-left: 0.5mm solid var(--secondary-color);
+  }
+
+  .fechas-periodo h3 {
+    font-size: 6pt;
+    margin-bottom: 0.5mm;
+  }
+
+  .periodo-grid {
+    gap: 0.5mm;
+  }
+
+  .importes-section {
+    border-left: 0.5mm solid var(--secondary-color);
+    padding: 1.5mm;
+    margin: 1mm 0;
+    background: #f8f9fa;
+  }
+
+  .importes-section h3 {
+    font-size: 8pt;
+    margin-bottom: 1mm;
+  }
+
+  .importe-item {
+    font-size: 7pt;
+    margin-bottom: 0.5mm;
+    border-bottom: 0.25pt solid #eee;
+  }
+
+  .importe-item.total {
+    font-size: 10pt;
+    border-top: 1pt solid var(--secondary-color);
+    border-bottom: 1pt solid var(--secondary-color);
+    padding: 1mm;
+  }
+
+  .verifactur-section {
+    background: #f0f8f0;
+    color: #333;
+    border: 1pt solid var(--success-color);
+    padding: 1.5mm;
+    margin: 1mm 0;
+  }
+
+  .verifactur-section h3 {
+    color: var(--success-color);
+    font-size: 9pt;
+    margin-bottom: 2mm;
+  }
+
+  .verifactur-grid {
+    gap: 1mm;
+  }
+
+  .verifactur-item {
+    background: white;
+    border: 0.5pt solid #ddd;
+    color: #333;
+    padding: 0.5mm;
+  }
+
+  .verifactur-label {
+    color: var(--success-color);
+    font-size: 6pt;
+    margin-bottom: 0.5mm;
+  }
+
+  .verifactur-value {
+    background: #f8f9fa;
+    color: #333;
+    font-size: 5pt;
+    padding: 1mm;
+  }
+
+  .qr-container {
+    padding: 1mm;
+  }
+
+  .qr-container h4 {
+    font-size: 5pt;
+    margin-bottom: 0.5mm;
+  }
+
+  .qr-code {
+    width: 10mm;
+    height: 10mm;
+  }
+
+  .footer {
+    background: #333;
+    font-size: 6pt;
+    padding: 2mm;
+    margin-top: 1mm;
+  }
+}
+
+/* Responsive para pantallas pequeñas */
+@media screen and (max-width: 768px) {
+  body {
+    padding: 2mm;
+  }
+
+  .factura-container {
+    width: 100%;
+  }
+
+  .info-grid,
+  .periodo-grid,
+  .verifactur-grid {
+    grid-template-columns: 1fr;
+    gap: 3mm;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn {
+    justify-content: center;
+    margin-bottom: 1mm;
+  }
+
+  .header {
+    flex-direction: column;
+    text-align: center;
+    height: auto;
+    padding: 4mm;
+  }
+
+  .verifactur-badge {
+    margin-top: 2mm;
+  }
+}
+
+/* Responsive para tablets */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .factura-container {
+    width: 95%;
+  }
+}
+
+/* Animaciones */
+@media screen {
+  .factura-container {
+    animation: slideIn 0.8s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(8mm);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .info-section:hover {
+    transform: translateY(-0.5mm);
+    box-shadow: 0 1mm 4mm rgba(0, 0, 0, 0.1);
+  }
+
+  .verifactur-item:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(0.5mm);
+  }
+}

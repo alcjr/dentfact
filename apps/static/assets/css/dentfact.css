@@ -1,0 +1,274 @@
+/* Aseguramos que el html y body no restrinjan el contenido */
+html, body {
+    height: 100%; /* Mínimo el alto de la ventana */
+    margin: 0;
+    padding: 0;
+    overflow-y: auto; /* Scroll en el body si el contenido excede */
+    overflow-x: hidden; /* Evitamos scroll horizontal innecesario */
+}
+
+/* El wrapper crece según el contenido */
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Mínimo la ventana */
+    height: auto; /* Se expande según el contenido */
+}
+
+/* El main-panel contiene todo el contenido y permite scroll si es necesario */
+.main-panel {
+    width: calc(100% - 250px);
+    margin-left: 250px;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Crece para llenar el espacio disponible */
+    min-height: 0; /* Evita que interfiera con el flex del wrapper */
+}
+
+/* Estilos para el menú desplegable personalizado/años*/
+.custom-select {
+    width: 100%;              /* Ocupa todo el ancho disponible */
+    height: 40px;             /* Aumenta el tamaño vertical */
+    padding: 8px 12px;        /* Espaciado interno */
+    font-family: Verdana, sans-serif; /* Fuente Verdana */
+    font-weight: bold;        /* Negrita */
+    font-size: 16px;          /* Tamaño de fuente más grande */
+    color: #000000;           /* Color negro para el texto */
+    background-color: #ffffff; /* Fondo blanco */
+    border: 2px solid #3c72e8; /* Borde azul para destacar */
+    border-radius: 8px;       /* Bordes redondeados */
+    cursor: pointer;          /* Cursor de mano */
+    appearance: none;         /* Elimina el estilo nativo del sistema */
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="%233c72e8" viewBox="0 0 16 16"><path d="M8 12L0 4h16z"/></svg>'); /* Flecha personalizada */
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+}
+
+/* Estilo al pasar el ratón */
+.custom-select:hover {
+    border-color: #45a049;    /* Cambia el borde a verde al pasar el ratón */
+    background-color: #f8f9fc; /* Fondo ligeramente gris */
+}
+
+/* Estilo cuando está enfocado */
+.custom-select:focus {
+    outline: none;            /* Elimina el contorno predeterminado */
+    border-color: #007bff;    /* Borde azul más brillante */
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Sombra suave */
+}
+
+/* Estilo para las opciones dentro del select */
+.custom-select option {
+    font-family: Verdana, sans-serif;
+    font-weight: bold;
+    color: #000000;
+    background-color: #ffffff;
+}
+
+custom-select {
+    background: linear-gradient(to right, #ecf1f4, #f4f814);
+    color: #192a4f; /* Color oscuro para contraste */
+}
+.custom-select option {
+    background: #ffffff; /* Fondo blanco para las opciones */
+    color: #000000;
+}
+
+/* Estilos para los títulos de las tarjetas */
+.card-title {
+    font-family: Verdana, sans-serif; /* Fuente Verdana */
+    font-weight: bold;                /* Negrita */
+    font-size: 24px;                  /* Tamaño equivalente a h5 */
+    color: #FFFFFF;                   /* Blanco brillante */
+    text-transform: uppercase;        /* Mayúsculas para consistencia con el diseño */
+    margin-bottom: 16px;              /* Espacio debajo para separación */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); /* Sombra sutil para destacar */
+}
+
+.circles-wrp {
+    width: 140px;  /* Ajusta este valor según el nuevo tamaño del círculo */
+    height: 140px;
+}
+
+.circles-text-large {
+    font-size: 24px !important; /* Ajusta el tamaño del texto */
+}
+
+@media (max-width: 991px) {
+    .main-panel {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+/* El content contiene los gráficos y activa el scroll */
+.content {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    flex-grow: 1; /* Crece para contener todo */
+    margin-top: 62px; /* Espacio para el header */
+    overflow-y: auto; /* Scroll vertical si el contenido excede */
+    overflow-x: hidden;
+}
+
+/* Aseguramos que las tarjetas no restrinjan el contenido */
+.card.full-height {
+    height: auto; /* Las tarjetas crecen según su contenido */
+    min-height: 100%; /* Mínimo el alto del contenedor padre */
+}
+
+/* Contenedores de gráficos sin restricciones rígidas */
+#chart-container {
+    width: 100%;
+    height: auto; /* Dejamos que Highcharts defina la altura */
+    min-height: 230px; /* Altura mínima para visibilidad */
+    margin-left: 0;
+}
+
+#multipleLineChartContainer {
+    width: 100%;
+    height: auto; /* Sin altura fija */
+    min-height: 400px; /* Altura mínima */
+}
+
+#multipleLineChart_00Container, 
+#multipleLineChart_01Container {
+    width: 100%;
+    height: auto; /* Altura dinámica */
+    min-height: 400px; /* Altura mínima */
+    overflow-y: visible; /* Aseguramos que no corte contenido interno */
+}
+
+/* El footer siempre al final */
+.footer {
+    flex-shrink: 0; /* No se encoge */
+    width: 100%;
+    background-color: #1a2035;
+    padding: 10px 0;
+    color: white;
+    position: relative; /* Fluye naturalmente en el layout */
+}
+
+/* Estilos existentes del footer */
+.footer {
+    flex-shrink: 0;
+    width: 100%;
+    background-color: #1a2035;
+    padding: 10px 0;
+    color: white;
+    position: relative;
+}
+
+/* Nuevo estilo específico para el enlace DENTFACT */
+.footer nav .nav-link {
+    font-family: Verdana, sans-serif; /* Fuente Verdana, con sans-serif como respaldo */
+    font-weight: bold; /* Negrita */
+    color: #FFFFFF; /* Blanco brillante */
+}
+
+/* Opcional: Asegurar que los enlaces no cambien de color al pasar el ratón */
+.footer nav .nav-link:hover,
+.footer nav .nav-link:focus {
+    color: #FFFFFF; /* Mantiene el blanco brillante en hover/focus */
+}
+
+
+.dx-icon-view {
+    font-family: 'Font Awesome 6 Free' !important;
+    font-weight: 900;
+}
+
+.dx-datagrid .dx-header-row .dx-datagrid-text-content {
+    color: #192a4f;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: medium;
+    font-weight: bold;
+}
+
+.dx-toolbar .dx-button {
+    background-color: #3c72e8;
+    color: white;
+    font-weight: bold;
+    border-radius: 10px;
+    padding: 10px 20px;
+    transition: background-color 0.3s;
+}
+
+.dx-header-row {
+    background: linear-gradient(to right, #ecf1f4, #f4f814);
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-bottom: 2px solid #dfebf4;
+    padding: 8px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.dx-toolbar .dx-button:hover {
+    background-color: #45a049;
+}
+
+.dx-toolbar .dx-button,
+.dx-toolbar .dx-texteditor-input {
+    height: 34px;
+    font-size: 14px;
+    padding: 0 10px;
+}
+
+.dx-toolbar {
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.dx-datagrid .dx-header-row {
+    height: 34px;
+}
+
+.dx-datagrid .dx-header-panel {
+    margin-top: 40px;
+}
+
+.dx-toolbar .dx-toolbar-item {
+    margin: 0 5px;
+}
+
+#gridContainer .dx-datagrid .dx-header-row .dx-sort {
+    color: #b8cf07 !important;
+}
+
+#gridContainer .dx-datagrid .dx-header-row .dx-sort-up, 
+#gridContainer .dx-datagrid .dx-header-row .dx-sort-down {
+    color: #12d986 !important;
+}
+
+#gridContainer .dx-datagrid .dx-header-row .dx-header-filter {
+    color: #3918cd !important;
+}
+
+#gridContainer .dx-datagrid .dx-header-row .dx-header-filter.dx-header-filter-filled {
+    color: #00ff00 !important;
+}
+
+#gridContainer .dx-datagrid-rowsview {
+    color: #000000;
+    font-family: Verdana, sans-serif;
+}
+
+#gridContainer .dx-datagrid-rowsview .dx-data-row:nth-child(odd) {
+    background-color: #dcebf7;
+    color: #000000;
+}
+
+#gridContainer .dx-datagrid-rowsview .dx-data-row:nth-child(even) {
+    background-color: #ffffff;
+    color: #000000;
+}

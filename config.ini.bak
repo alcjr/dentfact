@@ -1,0 +1,26 @@
+[inputs]
+pdf = C:\\Data\\pdf
+tablas = C:\\Data\\tablas
+master = C:\\Data\\master
+
+[outputs]
+logs = C:\\Data\\logs
+merged = C:\\Data\\merged
+facturas = C:\\Data\\facturas
+sqlite3_dbpath = C:/data/dentfact.sqlite3
+
+[smtp]
+email_host = smtp.serviapymes.com
+email_port = 587
+email_use_ssl = False
+email_use_tls = True
+email_host_user = ccanelada@serviapymes.es
+email_host_password = Ca4012
+
+[default]
+gabinete_percentage = 11.5
+iva_percentage = 21
+irpf_percentage = 15
+dd_femision = 21
+gastos = 50
+

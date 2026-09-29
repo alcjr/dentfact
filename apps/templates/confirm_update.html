@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Confirmar Actualización{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'assets/css/dentfact.css' %}">
+<style>
+  body {
+    background: radial-gradient(circle at 20% 30%, #1e293b, #0f172a 80%);
+    color: #e2e8f0;
+    font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+  }
+
+  .confirm-card {
+    max-width: 620px;
+    margin: 80px auto;
+    border-radius: 22px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .confirm-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  .card-header {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+
+  .card-header h3 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+  }
+
+  .icon-large {
+    font-size: 1.6rem;
+  }
+
+  .card-body {
+    padding: 3rem 2.5rem;
+    text-align: center;
+  }
+
+  .action-title {
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 2rem;
+  }
+
+  .warning-text {
+    font-size: 1.2rem;
+    color: #f8fafc;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    margin: 2rem 0;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25);
+    line-height: 1.6;
+  }
+
+  .btn-confirm {
+    font-size: 1.2rem;
+    font-weight: 600;
+    padding: 1rem 2.5rem;
+    border-radius: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    transition: all 0.3s ease;
+    min-width: 170px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+  }
+
+  .btn-cancel {
+    background: rgba(148, 163, 184, 0.2);
+    color: #e2e8f0;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+  }
+
+  .btn-cancel:hover {
+    background: rgba(148, 163, 184, 0.35);
+    transform: translateY(-3px);
+  }
+
+  .mt-4 {
+    margin-top: 2rem !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="confirm-card card border-0">
+    <div class="card-header">
+      <h3>
+        <i class="fas {{ icon|default:'fa-sync-alt' }} icon-large"></i>
+        Confirmar Acción
+      </h3>
+    </div>
+
+    <div class="card-body">
+      <h2 class="action-title">{{ action }}</h2>
+
+      <div class="warning-text">
+        Esta operación puede tardar varios segundos.<br>
+        <strong>¿Está seguro de continuar?</strong>
+      </div>
+
+      <div class="mt-4">
+        <form method="post" action="{{ url }}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary btn-confirm me-3">
+            <i class="fas fa-check icon-large me-2"></i>
+            Confirmar
+          </button>
+        </form>
+
+        <a href="javascript:history.back()" class="btn btn-cancel btn-confirm">
+          <i class="fas fa-times icon-large me-2"></i>
+          Cancelar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
