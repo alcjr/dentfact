@@ -745,3 +745,270 @@ def validateQRCode(request, facturaId):
             "status": "error",
             "message": f"Error al validar el código QR: {e}"
         }, status=500)
+
+
+# =============================================================================
+#  Generación del PDF de la factura (para envío por email)
+# =============================================================================
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
+    HRFlowable, KeepTogether,
+)
+
+
+def _safe(v, default=''):
+    """Devuelve '' para None y hace str del resto, sin tocar el formato."""
+    if v is None:
+        return default
+    return str(v)
+
+
+def generate_factura_pdf(factura) -> bytes:
+    """
+    Genera el PDF de una factura (objeto Factura_D) y devuelve los bytes.
+
+    Pensado para adjuntarse en el correo que se envía al doctor (emisor).
+    No pretende replicar pixel a pixel la plantilla HTML del dashboard,
+    sino producir un A4 limpio y legible con todos los datos fiscales.
+    """
+    try:
+        from io import BytesIO
+    except ImportError:
+        raise
+
+    buffer = BytesIO()
+
+    # -- Estilos -------------------------------------------------------------
+    styles = getSampleStyleSheet()
+
+    s_titulo = ParagraphStyle(
+        'titulo', parent=styles['Title'],
+        fontName='Helvetica-Bold', fontSize=20, leading=24,
+        alignment=TA_LEFT, textColor=colors.HexColor('#1e293b'),
+        spaceAfter=2,
+    )
+    s_seccion = ParagraphStyle(
+        'seccion', parent=styles['Normal'],
+        fontName='Helvetica-Bold', fontSize=9, leading=11,
+        alignment=TA_LEFT, textColor=colors.HexColor('#3b82f6'),
+        spaceBefore=2, spaceAfter=4,
+    )
+    s_label = ParagraphStyle(
+        'label', parent=styles['Normal'],
+        fontName='Helvetica', fontSize=8.5, leading=11,
+        textColor=colors.HexColor('#475569'),
+    )
+    s_valor = ParagraphStyle(
+        'valor', parent=styles['Normal'],
+        fontName='Helvetica', fontSize=8.5, leading=11,
+        textColor=colors.HexColor('#0f172a'),
+    )
+    s_valor_der = ParagraphStyle(
+        'valor_der', parent=s_valor, alignment=TA_RIGHT,
+    )
+    s_total = ParagraphStyle(
+        'total', parent=s_valor,
+        fontName='Helvetica-Bold', fontSize=11, leading=14,
+        alignment=TA_RIGHT, textColor=colors.HexColor('#1e293b'),
+    )
+    s_footer = ParagraphStyle(
+        'footer', parent=styles['Normal'],
+        fontName='Helvetica', fontSize=6.5, leading=9,
+        alignment=TA_CENTER, textColor=colors.HexColor('#64748b'),
+    )
+
+    # -- Datos de la factura -------------------------------------------------
+    factura_id     = _safe(getattr(factura, 'FACTURA', 'N/A'))
+    emision        = _safe(getattr(factura, 'EMISION', ''))
+    l_desde        = _safe(getattr(factura, 'L_DESDE', ''))
+    l_hasta        = _safe(getattr(factura, 'L_HASTA', ''))
+
+    doctor         = _safe(getattr(factura, 'DOCTOR', 'N/A'))
+    dni            = _safe(getattr(factura, 'DNI', ''))
+    email_emisor   = _safe(getattr(factura, 'EMAIL', ''))
+    telefono       = _safe(getattr(factura, 'TELEFONO', ''))
+    direccion      = _safe(getattr(factura, 'DIRECCION', ''))
+    postal         = _safe(getattr(factura, 'POSTAL', ''))
+    ciudad         = _safe(getattr(factura, 'CIUDAD', ''))
+
+    sociedad       = _safe(getattr(factura, 'SOCIEDAD', 'N/A'))
+    cif            = _safe(getattr(factura, 'CIF', ''))
+    desc_soc       = _safe(getattr(factura, 'DESCRIPCION_SOC', ''))
+    dir_soc        = _safe(getattr(factura, 'DIRECCION_SOC', ''))
+    postal_soc     = _safe(getattr(factura, 'POSTAL_SOC', ''))
+    provincia_soc  = _safe(getattr(factura, 'PROVINCIA_SOC', ''))
+
+    calculo_total  = _safe(getattr(factura, 'CALCULO_TOTAL', '0,00 €'))
+    gastos         = _safe(getattr(factura, 'GASTOS', '0,00 €'))
+    base_factura   = _safe(getattr(factura, 'BASE_FACTURA', '0,00 €'))
+    irpf           = _safe(getattr(factura, 'IRPF', '0,00%'))
+    cuota_irpf     = _safe(getattr(factura, 'CUOTA_IRPF', '0,00 €'))
+    total_factura  = _safe(getattr(factura, 'TOTAL_FACTURA', '0,00 €'))
+
+    # -- Documento -----------------------------------------------------------
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=15 * mm, rightMargin=15 * mm,
+        topMargin=15 * mm, bottomMargin=15 * mm,
+        title=f'Factura {factura_id}',
+        author='DENTFACT',
+        subject=f'Factura {factura_id}',
+    )
+
+    story = []
+
+    # --- Cabecera -----------------------------------------------------------
+    header_table = Table(
+        [[
+            Paragraph('FACTURA', s_titulo),
+            Paragraph(
+                '<font color="#ffffff" backColor="#10b981"><b> VERI*FACTU </b></font>',
+                ParagraphStyle('badge', parent=s_valor_der, fontSize=9, leading=12)
+            ),
+        ]],
+        colWidths=[120 * mm, 60 * mm],
+    )
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(header_table)
+    story.append(HRFlowable(
+        width='100%', thickness=1,
+        color=colors.HexColor('#3b82f6'),
+        spaceBefore=2, spaceAfter=10,
+    ))
+
+    # --- Datos de la factura ------------------------------------------------
+    datos_factura = [
+        ['Nº Factura:', factura_id],
+        ['Tipo:', 'F1 (Exenta de IVA *)'],
+        ['Emisión:', emision],
+        ['Periodo:', f'{l_desde} — {l_hasta}'],
+        ['Forma de pago:', 'Transferencia bancaria'],
+    ]
+    tabla_datos = Table(
+        [[Paragraph(a, s_label), Paragraph(b, s_valor)] for a, b in datos_factura],
+        colWidths=[35 * mm, 145 * mm],
+    )
+    tabla_datos.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+    ]))
+    story.append(tabla_datos)
+    story.append(Spacer(1, 8 * mm))
+
+    # --- Emisor / Receptor --------------------------------------------------
+    def bloque(titulo, filas):
+        data = [[Paragraph(titulo, s_seccion), '']]
+        for k, v in filas:
+            data.append([Paragraph(k, s_label), Paragraph(v or '—', s_valor)])
+        t = Table(data, colWidths=[24 * mm, 64 * mm])
+        t.setStyle(TableStyle([
+            ('SPAN', (0, 0), (1, 0)),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ('LINEBELOW', (0, 0), (-1, 0), 0.5, colors.HexColor('#3b82f6')),
+        ]))
+        return t
+
+    bloque_emisor = bloque('EMISOR', [
+        ('Doctor:', doctor),
+        ('DNI:', dni),
+        ('Email:', email_emisor),
+        ('Teléfono:', telefono),
+        ('Dirección:', f'{direccion}, {postal}, {ciudad}'.strip(', ')),
+    ])
+    bloque_receptor = bloque('RECEPTOR', [
+        ('Sociedad:', sociedad),
+        ('Descripción:', desc_soc),
+        ('CIF:', cif),
+        ('Dirección:', f'{dir_soc}, {postal_soc}, {provincia_soc}'.strip(', ')),
+    ])
+
+    bloque_grid = Table(
+        [[bloque_emisor, bloque_receptor]],
+        colWidths=[88 * mm, 88 * mm],
+    )
+    bloque_grid.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(bloque_grid)
+    story.append(Spacer(1, 8 * mm))
+
+    # --- Detalle de importes ------------------------------------------------
+    story.append(Paragraph('DETALLE DE IMPORTES', s_seccion))
+
+    importes = [
+        ['Cálculo Total:', calculo_total],
+        ['Gastos:', gastos],
+        ['Base Factura:', base_factura],
+        [f'IRPF ({irpf}):', cuota_irpf],
+        ['IVA (0,00%):', '0,00 €'],
+    ]
+    filas = [[Paragraph(k, s_label), Paragraph(v, s_valor_der)] for k, v in importes]
+
+    tabla_importes = Table(filas, colWidths=[120 * mm, 56 * mm])
+    tabla_importes.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LINEBELOW', (0, 0), (-1, -2), 0.3, colors.HexColor('#e2e8f0')),
+    ]))
+    story.append(tabla_importes)
+
+    total_table = Table(
+        [[
+            Paragraph('<b>TOTAL FACTURA:</b>', s_valor),
+            Paragraph(f'<b>{total_factura}</b>', s_total),
+        ]],
+        colWidths=[120 * mm, 56 * mm],
+    )
+    total_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LINEABOVE', (0, 0), (-1, 0), 1.2, colors.HexColor('#8b5cf6')),
+        ('LINEBELOW', (0, 0), (-1, 0), 1.2, colors.HexColor('#8b5cf6')),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#faf5ff')),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+    ]))
+    story.append(total_table)
+
+    story.append(Spacer(1, 4 * mm))
+    story.append(Paragraph('(*) Exenta de IVA según art. 20.1.5 de la Ley 37/1992', s_footer))
+    story.append(Spacer(1, 8 * mm))
+
+    # --- Pie ----------------------------------------------------------------
+    story.append(HRFlowable(
+        width='100%', thickness=0.6,
+        color=colors.HexColor('#3b82f6'),
+        spaceBefore=0, spaceAfter=4,
+    ))
+    story.append(Paragraph(
+        'Factura generada por DENTFACT. VERI*FACTU, verificable en la sede electrónica de la AEAT.<br/>'
+        'Cumple con la normativa de la Agencia Tributaria Española.',
+        s_footer,
+    ))
+
+    # --- Build --------------------------------------------------------------
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes

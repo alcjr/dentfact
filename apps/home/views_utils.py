@@ -115,7 +115,8 @@ try:
     pdf = validate_path(config.get('inputs', 'pdf'), 'pdf')
     tablas = validate_path(config.get('inputs', 'tablas'), 'tablas')
     logs = validate_path(config.get('outputs', 'logs'), 'logs')
-    sqlite3_dbpath = validate_path(config.get('outputs', 'sqlite3_dbpath'), 'sqlite3_dbpath')
+    #sqlite3_dbpath = validate_path(config.get('outputs', 'sqlite3_dbpath'), 'sqlite3_dbpath')
+    sqlite3_dbpath = Path(config.get('outputs', 'sqlite3_dbpath', fallback=''))  # ya no se valida ni se usa
     vIRPF = _get_float('default', 'IRPF_PERCENTAGE', 0.15)
     vGP = _get_float('default', 'GABINETE_PERCENTAGE', 0.115)
     vGASTOS = _get_float('default', 'GASTOS', 50)
@@ -1860,3 +1861,9 @@ def verify_docpercent_data():
     except Exception as e:
         print(f"❌ Error inesperado: {e}")
         return False
+
+from apps.home.dbconn import (  # noqa: E402,F401
+    df2tDB, dfi2tdb, table2df, load_table_to_dataframe, get_table_info,
+    updTables, clean_duplicates, df2tDB_verifactu,
+    fix_docpercent_decimals, verify_docpercent_data,
+)

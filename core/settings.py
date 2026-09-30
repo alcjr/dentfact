@@ -64,14 +64,31 @@ EMAIL_HOST_USER = ini_config.get('smtp', 'email_host_user', fallback='tuemail@gm
 EMAIL_HOST_PASSWORD = decouple_config('EMAIL_HOST_PASSWORD')  # ← OBLIGATORIO EN .env
 
 # === BASE DE DATOS ===
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': str(DB_PATH),
-        'OPTIONS': {'timeout': 30},
-        'ATOMIC_REQUESTS': True,
+
+DB_ENGINE = decouple_config('DB_ENGINE', default='postgresql')
+
+if DB_ENGINE == 'sqlite':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': str(DB_PATH),
+            'OPTIONS': {'timeout': 30},
+            'ATOMIC_REQUESTS': True,
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': decouple_config('DB_NAME', default='dentfact'),
+            'USER': decouple_config('DB_USER', default='dentfact'),
+            'PASSWORD': decouple_config('DB_PASSWORD'),
+            'HOST': decouple_config('DB_HOST', default='localhost'),
+            'PORT': decouple_config('DB_PORT', default='5432'),
+            'CONN_MAX_AGE': 60,
+            'ATOMIC_REQUESTS': True,
+        }
+    }
 
 # === SEGURIDAD ===
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', SERVER]

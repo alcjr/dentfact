@@ -1,0 +1,47 @@
+├───apps
+│   ├───authentication
+│   │   └───__pycache__
+│   ├───home
+│   │   ├───management
+│   │   │   └───commands
+│   │   ├───migrations
+│   │   │   └───__pycache__
+│   │   ├───templatetags
+│   │   │   └───__pycache__
+│   │   └───__pycache__
+│   ├───static
+│   │   └───assets
+│   │       ├───css
+│   │       ├───fonts
+│   │       │   ├───flaticon
+│   │       │   ├───fontawesome
+│   │       │   ├───simple-line-icons
+│   │       │   └───summernote
+│   │       ├───img
+│   │       ├───js
+│   │       │   ├───core
+│   │       │   └───plugin
+│   │       │       ├───bootstrap-notify
+│   │       │       ├───chart-circle
+│   │       │       ├───chart.js
+│   │       │       ├───datatables
+│   │       │       ├───jquery-scrollbar
+│   │       │       ├───jquery-ui-1.12.1.custom
+│   │       │       ├───jquery-ui-touch-punch
+│   │       │       ├───jquery.sparkline
+│   │       │       ├───jqvmap
+│   │       │       │   └───maps
+│   │       │       │       └───continents
+│   │       │       ├───sweetalert
+│   │       │       └───webfont
+│   │       └───sass
+│   │           └───atlantis
+│   │               ├───components
+│   │               └───plugins
+│   ├───templates
+│   └───__pycache__
+├───core
+│   ├───staticfiles
+│   └───__pycache__
+├───nginx
+└───staticfiles

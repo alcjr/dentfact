@@ -1072,15 +1072,3 @@ def init_factura() -> Dict[str, Any]:
 ###########################################################################################################
       
 # EJECUCIÓN PRINCIPAL
-if __name__ == "__main__":
-    try:
-        result = init_factura()
-        if result["success"]:
-            logger.info(result["message"])
-            for df_name, df in result["dataframes"].items():
-                logger.info(f"DataFrame {df_name}: {len(df)} filas")
-        else:
-            logger.error(result["message"])
-    except Exception as e:
-        logger.critical(f"Error al ejecutar init_factura: {e}", exc_info=True)
-        raise

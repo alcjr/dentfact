@@ -4,194 +4,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - DENTFACT</title>
+    <title>Iniciar sesión - DENTFACT</title>
 
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- DevExpress CSS (if still needed, otherwise remove) -->
-    <link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/23.2.3/css/dx.light.css" />
-    
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'assets/css/login.css' %}">
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite">
         <div class="loading-content">
-            <div class="loading-spinner"></div>
+            <div class="loading-spinner" aria-hidden="true"></div>
             <h4>Verificando credenciales...</h4>
             <p>Por favor, espera un momento</p>
         </div>
     </div>
 
-    <!-- Main Login Container -->
-    <div class="login-container">
-        <!-- Left Panel -->
-        <div class="login-left">
-            <div class="login-logo">
-                <i class="fas fa-cube"></i>
-            </div>
+    <main class="login-container">
+        <section class="login-left" aria-label="Presentación">
+            <div class="login-logo" aria-hidden="true"><i class="fas fa-cube"></i></div>
             <h1 class="login-title">DENTFACT</h1>
             <p class="login-subtitle">
                 Sistema de Gestión de Facturas Dentales<br>
                 (SANITAS-SERVIAPYMES)
             </p>
-            
             <ul class="feature-list">
-                <li>
-                    <i class="fas fa-file-excel"></i>
-                    Procesamiento automático de archivos PDF
-                </li>
-                <li>
-                    <i class="fas fa-database"></i>
-                    Gestión centralizada de facturas
-                </li>
-                <li>
-                    <i class="fas fa-check-circle"></i>
-                    Validación con Veri*Factu
-                </li>
-                <li>
-                    <i class="fas fa-shield-alt"></i>
-                    Acceso seguro y controlado
-                </li>
+                <li><i class="fas fa-file-pdf" aria-hidden="true"></i>Procesamiento automático de archivos PDF</li>
+                <li><i class="fas fa-database" aria-hidden="true"></i>Gestión centralizada de facturas</li>
+                <li><i class="fas fa-check-circle" aria-hidden="true"></i>Validación con Veri*Factu</li>
+                <li><i class="fas fa-shield-alt" aria-hidden="true"></i>Acceso seguro y controlado</li>
             </ul>
-        </div>
+        </section>
 
-        <!-- Right Panel - Login Form -->
-        <div class="login-right">
+        <section class="login-right">
             <div class="login-form-header">
-                <h2>Iniciar Sesión</h2>
-                <p>Ingresa tus credenciales para acceder al sistema</p>
+                <h2>Iniciar sesión</h2>
+                <p>Introduce tus credenciales para acceder al sistema</p>
             </div>
 
-            <!-- Alert Messages from Django -->
             {% if messages %}
-                <div id="django-messages">
+                <div id="django-messages" aria-live="polite">
                     {% for message in messages %}
                         <div class="alert alert-custom alert-{{ message.tags }}" role="alert">
-                            {% if 'success' in message.tags %}<i class="fas fa-check-circle"></i>{% endif %}
-                            {% if 'error' in message.tags %}<i class="fas fa-exclamation-circle"></i>{% endif %}
-                            {% if 'warning' in message.tags %}<i class="fas fa-exclamation-triangle"></i>{% endif %}
-                            {% if 'info' in message.tags %}<i class="fas fa-info-circle"></i>{% endif %}
-                            {{ message }}
+                            {% if 'success' in message.tags %}<i class="fas fa-check-circle" aria-hidden="true"></i>{% endif %}
+                            {% if 'danger' in message.tags or 'error' in message.tags %}<i class="fas fa-exclamation-circle" aria-hidden="true"></i>{% endif %}
+                            {% if 'warning' in message.tags %}<i class="fas fa-exclamation-triangle" aria-hidden="true"></i>{% endif %}
+                            {% if 'info' in message.tags %}<i class="fas fa-info-circle" aria-hidden="true"></i>{% endif %}
+                            <span>{{ message }}</span>
                         </div>
                     {% endfor %}
                 </div>
             {% endif %}
 
-            <!-- Login Form -->
             <form id="loginForm" method="post" action="{% url 'authentication:login' %}" novalidate>
                 {% csrf_token %}
-                <!-- Username/Email Field -->
-                <div class="form-floating">
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+                <div class="field">
                     <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fas fa-user"></i>
-                        </span>
-                        <input type="text" class="form-control" id="username" name="username" 
-                               placeholder="Usuario o Email" required autocomplete="username">
-                        <label for="username">Usuario o Email</label>
+                        <span class="input-group-text" aria-hidden="true"><i class="fas fa-user"></i></span>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="username" name="username"
+                                   placeholder="Usuario o email" required autocomplete="username"
+                                   autocapitalize="none" spellcheck="false" maxlength="150"
+                                   value="{{ form.username.value|default:'' }}"
+                                   aria-describedby="usernameFeedback">
+                            <label for="username">Usuario o email</label>
+                        </div>
                     </div>
-                    <div class="validation-feedback" id="usernameFeedback"></div>
+                    <div class="validation-feedback" id="usernameFeedback" aria-live="polite"></div>
                 </div>
 
-                <!-- Password Field -->
-                <div class="form-floating position-relative">
+                <div class="field">
                     <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fas fa-lock"></i>
-                        </span>
-                        <input type="password" class="form-control" id="password" name="password" 
-                               placeholder="Contraseña" required autocomplete="current-password">
-                        <label for="password">Contraseña</label>
+                        <span class="input-group-text" aria-hidden="true"><i class="fas fa-lock"></i></span>
+                        <div class="form-floating">
+                            <input type="password" class="form-control" id="password" name="password"
+                                   placeholder="Contraseña" required autocomplete="current-password"
+                                   aria-describedby="passwordFeedback">
+                            <label for="password">Contraseña</label>
+                        </div>
+                        <button type="button" class="input-group-text password-toggle" id="togglePassword"
+                                aria-label="Mostrar contraseña" aria-controls="password" aria-pressed="false">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
                     </div>
-                    <button type="button" class="password-toggle" id="togglePassword">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <div class="validation-feedback" id="passwordFeedback"></div>
+                    <div class="validation-feedback" id="passwordFeedback" aria-live="polite"></div>
                 </div>
 
-                <!-- Remember Me -->
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="rememberMe" name="remember_me">
-                    <label class="form-check-label" for="rememberMe">
-                        Recordar mis datos
-                    </label>
+                    <label class="form-check-label" for="rememberMe">Mantener sesión iniciada</label>
                 </div>
 
-                <!-- Login Button -->
                 <button type="submit" class="btn btn-login" id="loginBtn">
-                    <i class="fas fa-sign-in-alt me-2"></i>
-                    Iniciar Sesión
+                    <i class="fas fa-sign-in-alt me-2" aria-hidden="true"></i>Iniciar sesión
                 </button>
 
-               
-             
+                <div class="forgot-password">
+                    <a href="{% url 'authentication:password_reset' %}">¿Olvidaste tu contraseña?</a>
+                </div>
             </form>
-        </div>
-    </div>
+        </section>
+    </main>
 
-    <!-- System Status -->
-    <div class="system-status" id="systemStatus">
-        <div class="status-indicator">
-            <div class="status-dot" id="dbStatusDot"></div>
-            <span>Base de datos: <span id="dbStatus">Verificando...</span></span>
-        </div>
-        <div class="status-indicator">
-            <div class="status-dot" id="systemStatusDot"></div>
-            <span>Sistema: <span id="systemStatusText">Iniciando...</span></span>
-        </div>
-    </div>
+    <footer class="version-info">
+        DENTFACT v{{ APP_VERSION|default:"2.0" }} by SERVIAPYMES | © {% now "Y" %}
+    </footer>
 
-    <!-- Version Info -->
-    <div class="version-info">
-        DENTFACT v2.0 by SERVIAPYMES | © 2025
-    </div>
-
-    <!-- Forgot Password Modal -->
-    <div class="modal fade" id="forgotPasswordModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-key me-2"></i>Recuperar Contraseña
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted mb-3">
-                        Ingresa tu dirección de correo electrónico y te enviaremos las instrucciones 
-                        para restablecer tu contraseña.
-                    </p>
-                    <form id="forgotPasswordForm">
-                        <div class="form-floating mb-3">
-                            <input type="email" class="form-control" id="recoveryEmail" 
-                                   placeholder="correo@ejemplo.com" required>
-                            <label for="recoveryEmail">Correo Electrónico</label>
-                        </div>
-                        <div class="validation-feedback" id="recoveryEmailFeedback"></div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancelar
-                    </button>
-                    <button type="button" class="btn btn-primary" id="sendRecoveryBtn">
-                        <i class="fas fa-paper-plane me-2"></i>Enviar Instrucciones
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn3.devexpress.com/jslib/23.2.3/js/dx.all.js"></script>
-    <script src="{% static 'js/login.js' %}"></script>
+    <script src="{% static 'js/login.js' %}" defer></script>
 </body>
 </html>
