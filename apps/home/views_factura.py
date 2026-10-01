@@ -1,6 +1,5 @@
 import os
 import logging
-import sqlite3
 import locale
 import datetime
 from pathlib import Path
@@ -11,13 +10,14 @@ import numpy as np
 import pandas as pd
 
 from django.conf import settings
+from django.db import DatabaseError
 
 # Importar utilidades de la app (estas ya no hacen queries a nivel de módulo)
 from apps.home import views_utils as vu
 from apps.home import views_verifactu as vv
 
 
-locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
+locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')   # imprescindible: format_currency() depende de este locale
 logger = logging.getLogger(__name__)
 # --------------------------------------------------------------------
 # CARGA DE CONFIGURACIÓN
@@ -140,7 +140,10 @@ def get_importes(tablas_path: Path, sqlite3_db: Path) -> pd.DataFrame:
 
         df_sp.to_csv(vPath / "df_importes_inDB.csv", index=False)
         try:
-            result = vu.dfi2tdb(df_sp, db_path=str(sqlite3_db))
+            result = vu.dfi2tdb(df_sp)
+            if result.get('error'):
+                logger.error("dfi2tdb no pudo guardar dentfact_importes: %s", result['error'])
+                return pd.DataFrame()
             logger.info(f"Datos guardados en dentfact_importes. Insertados: {result['inserted']}, Omitidos: {result['skipped']}, No insertados: {len(result['not_inserted'])}")
             if not result['not_inserted'].empty:
                 logger.warning(f"Filas no insertadas (todas las columnas):\n{result['not_inserted'].to_string()}")
@@ -177,18 +180,14 @@ def loadALL(sqlite3_dbpath):
                     if tabla == 'dentfact_especialidad':
                         df = pd.DataFrame(columns=['ESPECIALIDAD', 'DESCRIPCION'])
                         # Intentar poblar la tabla si está vacía
-                        with sqlite3.connect(sqlite3_dbpath) as conn:
-                            cursor = conn.cursor()
-                            cursor.execute("SELECT COUNT(*) FROM dentfact_especialidad")
-                            count = cursor.fetchone()[0]
-                            if count == 0:
-                                logger.info("Poblando dentfact_especialidad con datos de prueba.")
-                                cursor.executemany(
-                                    "INSERT OR IGNORE INTO dentfact_especialidad (ESPECIALIDAD, DESCRIPCION) VALUES (?, ?)",
-                                    [('ORT', 'Ortodoncia'), ('END', 'Endodoncia')]
-                                )
-                                conn.commit()
-                                df = pd.read_sql_query("SELECT * FROM dentfact_especialidad", conn)
+                        from apps.home.models import Especialidad
+                        if not Especialidad.objects.exists():
+                            logger.info("Poblando dentfact_especialidad con datos de prueba.")
+                            Especialidad.objects.bulk_create(
+                                [Especialidad(ESPECIALIDAD='ORT', DESCRIPCION='Ortodoncia'),
+                                 Especialidad(ESPECIALIDAD='END', DESCRIPCION='Endodoncia')],
+                                ignore_conflicts=True)
+                            df = vu.table2df(None, 'dentfact_especialidad')
                     else:
                         df = pd.DataFrame()
                 else:
@@ -594,7 +593,7 @@ def get_factura_c(db_path: str, table_name: str, pk_field: str, df_table: pd.Dat
     Guarda los resultados en la tabla especificada en la base de datos.
 
     Args:
-        db_path (str): Ruta a la base de datos SQLite.
+        db_path (str): Obsoleto, se ignora (se usa la base de datos de settings).
         table_name (str): Nombre de la tabla destino (ej. dentfact_factura_c).
         pk_field (str): Nombre del campo de clave primaria (ej. FACTURA).
         df_table (pd.DataFrame): DataFrame con datos de facturas a procesar.
@@ -604,7 +603,7 @@ def get_factura_c(db_path: str, table_name: str, pk_field: str, df_table: pd.Dat
 
     Raises:
         ValueError: Si faltan columnas requeridas, el DataFrame está vacío o no es un DataFrame válido.
-        sqlite3.Error: Si hay errores al interactuar con la base de datos.
+        DatabaseError: Si hay errores al interactuar con la base de datos.
     """
     logger = logging.getLogger(__name__)
     logger.info("Iniciando generación de facturas por centros...")
@@ -698,9 +697,9 @@ def get_factura_c(db_path: str, table_name: str, pk_field: str, df_table: pd.Dat
         # Guardar en la base de datos
         logger.info(f"Guardando {len(df_table)} filas en la tabla {table_name}...")
         result = vu.df2tDB(df_table, db_path, pk_field, table_name)
-        if not result:
-            logger.error(f"Fallo al guardar datos en la tabla {table_name}")
-            raise ValueError(f"Error al guardar datos en {table_name}")
+        if result.get('error'):
+            logger.error(f"Fallo al guardar datos en la tabla {table_name}: {result['error']}")
+            raise ValueError(f"Error al guardar datos en {table_name}: {result['error']}")
         logger.info(f"Datos guardados en {table_name}. Insertados: {result.get('inserted', 0)}, Omitidos: {result.get('skipped', 0)}")
 
         logger.info(f"Filas procesadas por get_factura_c: {len(df_table)}")
@@ -709,7 +708,7 @@ def get_factura_c(db_path: str, table_name: str, pk_field: str, df_table: pd.Dat
     except ValueError as ve:
         logger.error(f"Error de validación en get_factura_c: {ve}", exc_info=True)
         raise
-    except sqlite3.Error as se:
+    except DatabaseError as se:
         logger.error(f"Error de base de datos en get_factura_c: {se}", exc_info=True)
         raise
     except Exception as e:
@@ -804,7 +803,7 @@ def get_factura_d(df_factura_c: pd.DataFrame) -> Optional[pd.DataFrame]:
             df['IRPF'] = pd.to_numeric(
                 df['IRPF'].astype(str).str.replace('%', '').str.replace(',', '.'),
                 errors='coerce'
-            ).fillna(vIRPF)
+            ).fillna(vIRPF).astype(float)   # float: con '15' (entero) el /= 100 siguiente falla en pandas 3
             df.loc[df['IRPF'] > 1, 'IRPF'] /= 100
 
         # L_HASTA
@@ -884,9 +883,9 @@ def get_factura_d(df_factura_c: pd.DataFrame) -> Optional[pd.DataFrame]:
         # -----------------------------------------------------------------
         # Guardar en DB
         # -----------------------------------------------------------------
-        success = vu.df2tDB(df_d, sqlite3_dbpath, 'FACTURA', 'dentfact_factura_d')
-        if not success:
-            logger.error("Fallo al guardar df_factura_d")
+        result = vu.df2tDB(df_d, None, 'FACTURA', 'dentfact_factura_d')
+        if result.get('error'):
+            logger.error("Fallo al guardar df_factura_d: %s", result['error'])
             return None
 
         logger.info("get_factura_d completado con éxito.")
@@ -911,7 +910,7 @@ def init_factura() -> Dict[str, Any]:
 
         try:
             df_doctor, df_docpercent, df_centro, df_especialidad, df_sociedad = vu.getTables(df_importes_in)
-        except (ValueError, sqlite3.Error) as e:
+        except (ValueError, DatabaseError) as e:
             logger.warning(f"Error en getTables: {e}")
             df_doctor = pd.DataFrame()
             df_docpercent = pd.DataFrame()
@@ -940,9 +939,9 @@ def init_factura() -> Dict[str, Any]:
         except ValueError as ve:
             logger.error(f"Error de validación: {ve}")
             return {"success": False, "dataframes": {}, "message": f"Error de validación: {ve}"}
-        except sqlite3.Error as se:
-            logger.error(f"Error de SQLite: {se}")
-            return {"success": False, "dataframes": {}, "message": f"Error de SQLite: {se}"}
+        except DatabaseError as se:
+            logger.error(f"Error de base de datos: {se}")
+            return {"success": False, "dataframes": {}, "message": f"Error de base de datos: {se}"}
         except Exception as e:
             logger.error(f"Error inesperado en updTables: {e}")
             return {"success": False, "dataframes": {}, "message": f"Error inesperado: {e}"}

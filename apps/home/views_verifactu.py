@@ -1,4 +1,3 @@
-import sqlite3
 import pandas as pd
 from pathlib import Path
 from lxml import etree
@@ -10,7 +9,7 @@ import io
 import logging
 import json
 from django.http import JsonResponse
-from django.db import transaction
+from django.db import transaction, connection
 import os
 from apps.home import views_utils as vu
 from configparser import ConfigParser
@@ -19,7 +18,6 @@ from configparser import ConfigParser
 logger = logging.getLogger(__name__)
 
 # Configuración de paths
-DB_PATH = Path(r"c:\data\dentfact.sqlite3")
 XSD_PATH = Path(r"c:\data\aeat\VeriFactu_Registro.xsd")
 EXPORT_PATH = Path(r"c:\data\verifactu_export")
 EXPORT_PATH.mkdir(exist_ok=True)
@@ -82,10 +80,7 @@ except Exception as e:
 
 # 1. Cargar datos desde la base de datos
 def load_data():
-    conn = sqlite3.connect(DB_PATH)
-    df_factura_d = pd.read_sql_query("SELECT * FROM dentfact_factura_d", conn)
-    conn.close()
-    return df_factura_d
+    return vu.table2df(None, 'dentfact_factura_d')
 
 # 2. Reducir columnas
 def reduce_columns(df):
@@ -281,6 +276,48 @@ def _gen_XML(row):
         raise
 
     
+# --------------------------------------------------------------------
+# ORDEN DE LA CADENA DE HUELLAS
+# --------------------------------------------------------------------
+# PREVIOUS_HASH de cada registro es el HASH de la fila anterior del DataFrame.
+# SQLite devolvía las filas en orden de inserción (rowid); PostgreSQL NO garantiza
+# ningún orden en un SELECT sin ORDER BY. Por eso el orden se fija explícitamente:
+#   1) primero los registros que ya están en dentfact_factura_v, en el orden de su id
+#      (así la cadena ya emitida no cambia), y
+#   2) después las facturas nuevas, por fecha de emisión y número de factura.
+def _ordenar_para_cadena(df):
+    if df.empty:
+        return df
+    with connection.cursor() as cur:
+        cur.execute('SELECT "factura" FROM dentfact_factura_v ORDER BY "id"')
+        ya_emitidas = [r[0] for r in cur.fetchall()]
+    posicion = {f: i for i, f in enumerate(ya_emitidas)}
+    out = df.copy()
+    out['_pos'] = out['FACTURA'].map(posicion)
+    out['_nueva'] = out['_pos'].isna()
+    out['_fecha'] = pd.to_datetime(out['EMISION'], dayfirst=True, errors='coerce')
+    out = out.sort_values(['_nueva', '_pos', '_fecha', 'FACTURA'], kind='mergesort', na_position='last')
+    return out.drop(columns=['_pos', '_nueva', '_fecha']).reset_index(drop=True)
+
+
+def verificar_cadena():
+    """
+    Comprueba la cadena ya almacenada: el PREVIOUS_HASH de cada registro debe ser el
+    HASH del anterior (por id). Devuelve (ok, lista_de_roturas).
+    """
+    with connection.cursor() as cur:
+        cur.execute('SELECT "id", "factura", "hash", "previous_hash" FROM dentfact_factura_v ORDER BY "id"')
+        filas = cur.fetchall()
+    roturas, anterior = [], None
+    for _id, factura, h, prev in filas:
+        esperado = '0' * 64 if anterior is None else anterior
+        if prev != esperado:
+            roturas.append({'id': _id, 'factura': factura})
+        anterior = h
+    logger.info("Cadena Veri*Factu: %s registros, %s roturas", len(filas), len(roturas))
+    return (not roturas), roturas
+
+
 # Pipeline principal CON VALIDACIONES
 def validate_data_consistency():
     """
@@ -288,16 +325,12 @@ def validate_data_consistency():
     dentfact_factura_d y dentfact_factura_v
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
-        
         # Contar registros en ambas tablas
-        count_d = pd.read_sql_query("SELECT COUNT(*) as count FROM dentfact_factura_d", conn)
-        count_v = pd.read_sql_query("SELECT COUNT(*) as count FROM dentfact_factura_v", conn)
-        
-        count_d_value = count_d['count'].iloc[0]
-        count_v_value = count_v['count'].iloc[0]
-        
-        conn.close()
+        with connection.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM dentfact_factura_d")
+            count_d_value = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM dentfact_factura_v")
+            count_v_value = cur.fetchone()[0]
         
         is_consistent = count_d_value == count_v_value
         
@@ -348,17 +381,19 @@ def export2xml(request):
         logger.info(f"Exportando {len(factura_ids)} facturas a AEAT: {factura_ids[:5]}...")
 
         # --- 1. Consultar XMLs desde dentfact_factura_v ---
+        # EMISION vive en dentfact_factura_d (texto dd/mm/aaaa) y se ordena como fecha real.
         with connection.cursor() as cursor:
-            placeholders = ','.join(['%s'] * len(factura_ids))
-            query = f"""
-                SELECT FACTURA, XML 
-                FROM dentfact_factura_v 
-                WHERE FACTURA IN ({placeholders})
-                  AND XML IS NOT NULL 
-                  AND XML != ''
-                ORDER BY EMISION, FACTURA
-            """
-            cursor.execute(query, factura_ids)
+            cursor.execute("""
+                SELECT v."factura", v."xml"
+                FROM dentfact_factura_v v
+                LEFT JOIN dentfact_factura_d d ON d."FACTURA" = v."factura"
+                WHERE v."factura" = ANY(%s)
+                  AND v."xml" IS NOT NULL
+                  AND v."xml" <> ''
+                ORDER BY CASE WHEN d."EMISION" ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$'
+                              THEN to_date(d."EMISION", 'DD/MM/YYYY') END,
+                         v."factura"
+            """, [[str(f) for f in factura_ids]])
             rows = cursor.fetchall()
 
         if not rows:
@@ -440,7 +475,7 @@ def init_verifactu():
         #clear_existing_data()
         
         # Cargar y preparar datos
-        df_factura_d = vu.table2df(sqlite3_dbpath, 'dentfact_factura_d')
+        df_factura_d = _ordenar_para_cadena(vu.table2df(sqlite3_dbpath, 'dentfact_factura_d'))
         original_count = len(df_factura_d)
         logger.info(f"Cargadas {original_count} facturas desde la base de datos")
         
@@ -568,11 +603,9 @@ def init_verifactu():
         insert_result = vu.df2tDB_verifactu(df_factura_v, sqlite3_dbpath)
         
         # Validación 8: Verificar inserción en base de datos
-        conn = sqlite3.connect(DB_PATH)
-        count_result = pd.read_sql_query("SELECT COUNT(*) as count FROM dentfact_factura_v", conn)
-        conn.close()
-        
-        db_count = count_result['count'].iloc[0]
+        with connection.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM dentfact_factura_v")
+            db_count = cur.fetchone()[0]
         if db_count != original_count:
             logger.error(f"ERROR CRÍTICO: Inconsistencia en base de datos. Esperado: {original_count}, Encontrado: {db_count}")
             return False
@@ -604,13 +637,10 @@ def init_verifactu():
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import base64, re, io, logging
-import sqlite3
 from PIL import Image
 from pyzbar.pyzbar import decode as decode_qr
 
 logger = logging.getLogger(__name__)
-
-DB_PATH = Path(r"c:\data\dentfact.sqlite3")
 
 # ---------------------------------------------------------------------
 # VALIDACIÓN FACTURA VERI*FACTU
@@ -628,16 +658,13 @@ def validateFactura(request, facturaId):
 
     try:
         factura_id = str(facturaId).strip()
-        conn = sqlite3.connect(DB_PATH)
-        cur = conn.cursor()
-
-        cur.execute("""
-            SELECT FACTURA, SIF_ID, HASH, PREVIOUS_HASH, XML 
-            FROM dentfact_factura_v 
-            WHERE FACTURA = ?
-        """, (factura_id,))
-        row = cur.fetchone()
-        conn.close()
+        with connection.cursor() as cur:
+            cur.execute("""
+                SELECT "factura", "sif_id", "hash", "previous_hash", "xml"
+                FROM dentfact_factura_v
+                WHERE "factura" = %s
+            """, [factura_id])
+            row = cur.fetchone()
 
         if not row:
             return JsonResponse({"status": "error", "message": f"No se encontró la factura {factura_id}"})
@@ -654,18 +681,17 @@ def validateFactura(request, facturaId):
             errors.append("Hash inválido o no generado")
 
         # --- Validación XML ---
-        if not xml or "<RegistroFacturacion" not in xml:
+        if not xml or "RegistroFacturacion" not in xml:   # el XML lleva prefijo (<vf:RegistroFacturacion)
             errors.append("XML Veri*Factu ausente o incompleto")
 
         # --- Verificar integridad con tabla dentfact_factura_d ---
-        conn = sqlite3.connect(DB_PATH)
-        df = pd.read_sql_query(
-            "SELECT FACTURA, TOTAL_FACTURA, BASE_FACTURA, EMISION FROM dentfact_factura_d WHERE FACTURA = ?",
-            conn, params=(factura_id,)
-        )
-        conn.close()
+        with connection.cursor() as cur:
+            cur.execute(
+                'SELECT "FACTURA", "TOTAL_FACTURA", "BASE_FACTURA", "EMISION" '
+                'FROM dentfact_factura_d WHERE "FACTURA" = %s', [factura_id])
+            existe_en_d = cur.fetchone() is not None
 
-        if df.empty:
+        if not existe_en_d:
             errors.append("No existe registro en dentfact_factura_d para esta factura")
 
         # Si todo correcto
@@ -703,11 +729,9 @@ def validateQRCode(request, facturaId):
 
     try:
         factura_id = str(facturaId).strip()
-        conn = sqlite3.connect(DB_PATH)
-        cur = conn.cursor()
-        cur.execute("SELECT QR_BASE64 FROM dentfact_factura_v WHERE FACTURA = ?", (factura_id,))
-        row = cur.fetchone()
-        conn.close()
+        with connection.cursor() as cur:
+            cur.execute('SELECT "qr_base64" FROM dentfact_factura_v WHERE "factura" = %s', [factura_id])
+            row = cur.fetchone()
 
         if not row or not row[0]:
             return JsonResponse({"status": "error", "message": "Factura sin código QR"})
