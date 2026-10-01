@@ -2,13 +2,14 @@
 
 import json
 import decimal
+import sqlite3
 import logging
 from datetime import datetime
 
 from django.shortcuts import render
 from typing import Tuple, Dict, Any
 from django.http import JsonResponse, HttpRequest
-from django.db import connection, transaction, DatabaseError
+from django.db import connection
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.template import TemplateDoesNotExist
@@ -52,35 +53,6 @@ class DecimalEncoder(json.JSONEncoder):
             return float(obj)
         return super(DecimalEncoder, self).default(obj)
 
-# ------------------- HELPERS SQL (PostgreSQL) -------------------
-
-_NUM_RE = r"^-?[0-9]+(\.[0-9]+)?$"
-# Fecha L_HASTA válida: dd/mm/aaaa (descarta 'Fecha desconocida', vacíos, etc.)
-FECHA_OK = """"L_HASTA" ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$'"""
-
-
-def num(col: str) -> str:
-    """
-    Expresión SQL que convierte una columna de texto en numeric.
-    Admite '909.8', '1.234,50 €', '' y 'nan' (estos dos últimos -> 0).
-    Si hay coma se asume formato europeo (punto = millares, coma = decimal).
-    """
-    t = "TRIM(REPLACE(COALESCE(" + col + ", ''), ' €', ''))"
-    n = ("CASE WHEN POSITION(',' IN " + t + ") > 0 "
-         "THEN REPLACE(REPLACE(" + t + ", '.', ''), ',', '.') ELSE " + t + " END")
-    return "CASE WHEN " + n + " ~ '" + _NUM_RE + "' THEN (" + n + ")::numeric ELSE 0 END"
-
-
-def run(cursor, sql, params=None):
-    """
-    Ejecuta dentro de un savepoint. Con ATOMIC_REQUESTS=True, un error en una
-    consulta abortaría toda la transacción y las demás consultas del dashboard
-    fallarían en cadena; así solo falla la que tiene el problema.
-    """
-    with transaction.atomic():
-        cursor.execute(sql, params)
-
-
 # ------------------- FUNCIONES DE CONSULTA -------------------
 
 def get_F_Conteos(cursor):
@@ -94,7 +66,7 @@ def get_F_Conteos(cursor):
     conteos = {key: 0 for key in queries}
     try:
         for key, query in queries.items():
-            run(cursor, query)
+            cursor.execute(query)
             conteos[key] = cursor.fetchone()[0] or 0
             logger.info(f"{key}: {conteos[key]} registros")
     except Exception as e:
@@ -104,22 +76,24 @@ def get_F_Conteos(cursor):
 def get_F_FacGasTot(cursor, current_year):
     logger.info("Obteniendo facturación y gastos totales.")
     year_str = str(current_year)
-    query = (
-        'SELECT SUM(' + num('"TOTAL_FACTURA"') + ') AS total_facturacion, '
-        '       SUM(' + num('"GASTOS"') + ') AS total_gastos '
-        'FROM dentfact_factura_d WHERE "ANNO" = %(year)s'
-    )
+    query = """
+        SELECT 
+            SUM(CAST(REPLACE(REPLACE(REPLACE(COALESCE(TOTAL_FACTURA, '0'), ' €', ''), '.', ''), ',', '.') AS REAL)) AS total_facturacion,
+            SUM(CAST(REPLACE(REPLACE(REPLACE(COALESCE(GASTOS, '0'), ' €', ''), '.', ''), ',', '.') AS REAL)) AS total_gastos
+        FROM dentfact_factura_d 
+        WHERE ANNO = :year
+    """
     try:
-        run(cursor, query, {'year': year_str})
+        cursor.execute(query, {'year': year_str})
         result = cursor.fetchone()
-        total_facturacion = float(result[0]) if result and result[0] is not None else 0
-        total_gastos = float(result[1]) if result and result[1] is not None else 0
+        total_facturacion = result[0] if result and result[0] is not None else 0
+        total_gastos = result[1] if result and result[1] is not None else 0
         logger.info(f"Total facturación: {total_facturacion}, Total gastos: {total_gastos}")
         return {
             'total_facturacion': format_currency(total_facturacion).strip(),
             'total_gastos': format_currency(total_gastos).strip()
         }
-    except DatabaseError as db_err:
+    except sqlite3.Error as db_err:
         logger.error(f"Error de base de datos: {db_err}")
         return {'total_facturacion': "0,00 €", 'total_gastos': "0,00 €"}
     except Exception as e:
@@ -131,19 +105,22 @@ def get_F_FacGasMes(cursor, current_year):
     gastos_mes = {mes: 0 for mes in MESES}
     try:
         year_str = str(current_year)
-        query = (
-            'SELECT "MES", SUM(' + num('"TOTAL_FACTURA"') + ') AS suma_facturacion, '
-            '       SUM(' + num('"GASTOS"') + ') AS suma_gastos '
-            'FROM dentfact_factura_d WHERE "ANNO" = %(year)s GROUP BY "MES"'
-        )
-        run(cursor, query, {'year': year_str})
+        query = """
+            SELECT MES, 
+                   SUM(CAST(REPLACE(REPLACE(REPLACE(COALESCE(TOTAL_FACTURA, '0'), ' €', ''), '.', ''), ',', '.') AS REAL)) AS suma_facturacion,
+                   SUM(CAST(REPLACE(REPLACE(REPLACE(COALESCE(GASTOS, '0'), ' €', ''), '.', ''), ',', '.') AS REAL)) AS suma_gastos
+            FROM dentfact_factura_d 
+            WHERE ANNO = :year 
+            GROUP BY MES
+        """
+        cursor.execute(query, {'year': year_str})
         results = dictfetchall(cursor)
         for row in results:
             try:
                 mes_idx = int(row['MES']) - 1
                 if 0 <= mes_idx < 12:
-                    facturacion_mes[MESES[mes_idx]] = float(row['suma_facturacion'] or 0)
-                    gastos_mes[MESES[mes_idx]] = float(row['suma_gastos'] or 0)
+                    facturacion_mes[MESES[mes_idx]] = row['suma_facturacion'] or 0
+                    gastos_mes[MESES[mes_idx]] = row['suma_gastos'] or 0
                     logger.info(f"{MESES[mes_idx]}: Facturación {facturacion_mes[MESES[mes_idx]]}, Gastos {gastos_mes[MESES[mes_idx]]}")
             except (ValueError, TypeError):
                 logger.warning(f"Valor inválido para MES: {row.get('MES')}")
@@ -160,11 +137,14 @@ def get_F_FacGasMes(cursor, current_year):
 def get_F_Sociedades(cursor, current_year):
     try:
         year_str = str(current_year)
-        query = (
-            'SELECT "SOCIEDAD", "MES", SUM(' + num('"TOTAL_FACTURA"') + ') AS total_facturacion '
-            'FROM dentfact_factura_d WHERE "ANNO" = %(year)s GROUP BY "SOCIEDAD", "MES"'
-        )
-        run(cursor, query, {'year': year_str})
+        query = """
+            SELECT SOCIEDAD, MES, 
+                   SUM(CAST(REPLACE(REPLACE(REPLACE(COALESCE(TOTAL_FACTURA, '0'), ' €', ''), '.', ''), ',', '.') AS REAL)) AS total_facturacion 
+            FROM dentfact_factura_d 
+            WHERE ANNO = :year
+            GROUP BY SOCIEDAD, MES
+        """
+        cursor.execute(query, {'year': year_str})
         sociedades_data = dictfetchall(cursor)
         sociedades_dict = {sociedad: [0.0]*12 for sociedad in set(row['SOCIEDAD'] for row in sociedades_data)}
         for row in sociedades_data:
@@ -190,11 +170,13 @@ def get_F_Sociedades(cursor, current_year):
 
 def get_F_year(cursor):
     try:
-        query_years = (
-            'SELECT DISTINCT SUBSTR("L_HASTA", 7, 4) AS anio FROM dentfact_factura_c '
-            'WHERE ' + FECHA_OK + ' ORDER BY anio'
-        )
-        run(cursor, query_years)
+        query_years = """
+            SELECT DISTINCT SUBSTR(L_HASTA, 7, 4) AS year
+            FROM dentfact_factura_c
+            WHERE L_HASTA IS NOT NULL
+            ORDER BY year
+        """
+        cursor.execute(query_years)
         years = [row[0] for row in cursor.fetchall() if row[0]]
         if not years:
             years = [str(datetime.now().year)]
@@ -207,14 +189,16 @@ def get_F_year(cursor):
 def get_F_Centros(cursor, current_year):
     try:
         year_str = str(current_year)
-        query = (
-            'SELECT "CENTRO", SUBSTR("L_HASTA", 4, 2) AS "MES", '
-            '       SUM(' + num('"NETO"') + ') AS total_facturacion '
-            'FROM dentfact_factura_c '
-            'WHERE ' + FECHA_OK + ' AND SUBSTR("L_HASTA", 7, 4) = %(year)s '
-            'GROUP BY "CENTRO", SUBSTR("L_HASTA", 4, 2) ORDER BY "CENTRO", "MES"'
-        )
-        run(cursor, query, {'year': year_str})
+        query = """
+            SELECT CENTRO, 
+                   TRIM(SUBSTR(L_HASTA, 4, 2)) AS MES, 
+                   SUM(CAST(COALESCE(Neto, 0) AS REAL)) AS total_facturacion
+            FROM dentfact_factura_c
+            WHERE SUBSTR(L_HASTA, 7, 4) = :year
+            GROUP BY CENTRO, TRIM(SUBSTR(L_HASTA, 4, 2))
+            ORDER BY CENTRO, MES
+        """
+        cursor.execute(query, {'year': year_str})
         centros_data = dictfetchall(cursor)
         centros_dict = {}
         for row in centros_data:
@@ -239,12 +223,15 @@ def get_F_Centros(cursor, current_year):
 def get_F_Dentistas(cursor, current_year):
     try:
         year_str = str(current_year)
-        query = (
-            'SELECT "SPCODE", "MES", SUM(' + num('"TOTAL_FACTURA"') + ') AS total_facturacion '
-            'FROM dentfact_factura_d WHERE "ANNO" = %(year)s '
-            'GROUP BY "SPCODE", "MES" ORDER BY "SPCODE", "MES"'
-        )
-        run(cursor, query, {'year': year_str})
+        query = """
+            SELECT SPCODE, MES,
+                   SUM(CAST(REPLACE(REPLACE(REPLACE(COALESCE(TOTAL_FACTURA, '0'), ' €', ''), '.', ''), ',', '.') AS REAL)) AS total_facturacion
+            FROM dentfact_factura_d
+            WHERE ANNO = :year
+            GROUP BY SPCODE, MES
+            ORDER BY SPCODE, MES
+        """
+        cursor.execute(query, {'year': year_str})
         dentistas_data = dictfetchall(cursor)
         dentistas_dict = {}
         for row in dentistas_data:
@@ -257,7 +244,7 @@ def get_F_Dentistas(cursor, current_year):
             if dentista not in dentistas_dict:
                 dentistas_dict[dentista] = [0]*12
             if 0 <= mes_idx < 12:
-                dentistas_dict[dentista][mes_idx] = float(row['total_facturacion'] or 0)
+                dentistas_dict[dentista][mes_idx] = row['total_facturacion'] or 0
                 logger.info(f"Dentista {dentista}: {dentistas_dict[dentista][mes_idx]} en mes {row['MES']}")
         series = [{
             'name': MESES[i].capitalize(),
@@ -271,18 +258,20 @@ def get_F_Dentistas(cursor, current_year):
 def get_F_Especialidades(cursor, current_year):
     try:
         year_str = str(current_year)
-        query = (
-            'SELECT "ESPECIALIDAD", SUM(' + num('"BRUTO"') + ') AS total_facturacion '
-            'FROM dentfact_factura_c '
-            'WHERE ' + FECHA_OK + ' AND SUBSTR("L_HASTA", 7, 4) = %(year)s GROUP BY "ESPECIALIDAD"'
-        )
-        run(cursor, query, {'year': year_str})
+        query = """
+            SELECT ESPECIALIDAD, 
+                   SUM(CAST(REPLACE(REPLACE(REPLACE(COALESCE(BRUTO, '0'), ' €', ''), '.', ''), ',', '.') AS REAL)) AS total_facturacion 
+            FROM dentfact_factura_c 
+            WHERE SUBSTR(L_HASTA, 7, 4) = :year 
+            GROUP BY ESPECIALIDAD
+        """
+        cursor.execute(query, {'year': year_str})
         especialidades_data = dictfetchall(cursor)
         logger.info(f"Especialidades: {len(especialidades_data)} registros")
         return [{
             'name': 'Facturación por especialidad',
             'colorByPoint': True,
-            'data': [{'name': row['ESPECIALIDAD'], 'y': float(row['total_facturacion'] or 0)} for row in especialidades_data]
+            'data': [{'name': row['ESPECIALIDAD'], 'y': row['total_facturacion']} for row in especialidades_data]
         }]
     except Exception as e:
         logger.error(f"Error al obtener facturación por especialidades: {e}")
@@ -295,12 +284,14 @@ def check_database():
         'dentfact_sociedad', 'dentfact_centro', 'dentfact_doctor',
         'dentfact_especialidad', 'dentfact_factura_d', 'dentfact_factura_c'
     ]
-    tables = set(connection.introspection.table_names())
-    missing = [table for table in required_tables if table not in tables]
-    if missing:
-        logger.error(f"Tablas faltantes: {missing}")
-        return False
-    return True
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [row[0] for row in cursor.fetchall()]
+        missing = [table for table in required_tables if table not in tables]
+        if missing:
+            logger.error(f"Tablas faltantes: {missing}")
+            return False
+        return True
 
 # ------------------- GENERACIÓN DEL CONTEXTO -------------------
 
